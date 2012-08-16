@@ -22,6 +22,13 @@ inline boost::python::objects::class_base register_cuboidal_region_class(char co
         .add_property("shape",
             make_function((typename impl_type::shape_type const&(impl_type::*)()const)&impl_type::shape,
                           return_value_policy<return_by_value>()))
+//         // Structure functions dispatch
+//         .def("get_pos_sid_pair", &impl_type::get_pos_sid_pair)
+//         .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::cuboidal_region_type>)
+//         .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::spherical_surface_type>)
+//         .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::cylindrical_surface_type>)
+//         .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::disk_surface_type>)
+//         .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::planar_surface_type>)
         ;
 }
 

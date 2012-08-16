@@ -49,6 +49,14 @@ inline boost::python::objects::class_base register_structure_class(char const *n
         .def("project_point", &impl_type::project_point)
         .def("deflect", &impl_type::deflect)
 //        .def("deflect_back", &impl_type::deflect_back)
+
+        // Structure functions dispatch
+//         .def("get_pos_sid_pair", &impl_type::get_pos_sid_pair)
+        .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::cuboidal_region_type>)
+        .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::spherical_surface_type>)
+        .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::cylindrical_surface_type>)
+        .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::disk_surface_type>)
+        .def("get_pos_sid_pair_helper", &impl_type::template get_pos_sid_pair_helper<typename impl_type::planar_surface_type>)
         ;
 }
 

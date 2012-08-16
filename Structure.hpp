@@ -59,6 +59,13 @@ public:
     typedef std::pair<position_type, structure_id_type>                           position_structid_pair_type;
     typedef std::pair<position_structid_pair_type, position_structid_pair_type>   position_structid_pair_pair_type;
     typedef StructureContainer<typename traits_type::structure_type, structure_id_type, traits_type>   structure_container_type;
+    
+    typedef CuboidalRegion<traits_type>                cuboidal_region_type;
+    typedef SphericalSurface<traits_type>              spherical_surface_type;
+    typedef CylindricalSurface<traits_type>            cylindrical_surface_type;
+    typedef PlanarSurface<traits_type>                 planar_surface_type;   
+    typedef DiskSurface<traits_type>                   disk_surface_type;
+    
 
 public:
     virtual ~Structure() {}
@@ -161,51 +168,57 @@ public:
     // 
     // *** 1 *** - Producing one new position
     // First dispatch
-    position_structid_pair_type get_pos_sid_pair(structure_type const& target_structure, position_type const& position,
-                                                         length_type const& offset, length_type const& reaction_length, rng_type& rng) const
-    {
-        return target_structure.get_pos_sid_pair_helper(*this, position, offset, reaction_length, rng);
-    }
-    
+    virtual position_structid_pair_type get_pos_sid_pair(structure_type const& target_structure, position_type const& position,
+                                                         length_type const& offset, length_type const& reaction_length, rng_type& rng) const = 0;
+//     position_structid_pair_type get_pos_sid_pair(structure_type const& target_structure, position_type const& position,
+//                                                          length_type const& offset, length_type const& reaction_length, rng_type& rng) const
+//     {
+//         return target_structure.get_pos_sid_pair_helper(*this, position, offset, reaction_length, rng);
+//     }
+//     
     // Second dispatch
-    position_structid_pair_type get_pos_sid_pair_helper(CuboidalRegion<traits_type> const& origin_structure, position_type const& position,
-                                                        length_type const& offset, length_type const& rl, rng_type& rng) const
-    {
-        return this->get_pos_sid_pair_helper_any<CuboidalRegion<traits_type> >(origin_structure, position, offset, rl, rng);
-    }
-    position_structid_pair_type get_pos_sid_pair_helper(SphericalSurface<traits_type> const& origin_structure, position_type const& position,
-                                                        length_type const& offset, length_type const& rl, rng_type& rng) const
-    {
-        return this->get_pos_sid_pair_helper_any<SphericalSurface<traits_type> >(origin_structure, position, offset, rl, rng);
-    }
-    position_structid_pair_type get_pos_sid_pair_helper(CylindricalSurface<traits_type> const& origin_structure, position_type const& position,
-                                                        length_type const& offset, length_type const& rl, rng_type& rng) const
-    {
-        return this->get_pos_sid_pair_helper_any<CylindricalSurface<traits_type> >(origin_structure, position, offset, rl, rng);
-    }
-    position_structid_pair_type get_pos_sid_pair_helper(DiskSurface<traits_type> const& origin_structure, position_type const& position,
-                                                        length_type const& offset, length_type const& rl, rng_type& rng) const
-    {
-        return this->get_pos_sid_pair_helper_any<DiskSurface<traits_type> >(origin_structure, position, offset, rl, rng);
-    }
-    position_structid_pair_type get_pos_sid_pair_helper(PlanarSurface<traits_type> const& origin_structure, position_type const& position,
-                                                        length_type const& offset, length_type const& rl, rng_type& rng) const
-    {
-        return this->get_pos_sid_pair_helper_any<PlanarSurface<traits_type> >(origin_structure, position, offset, rl, rng);
-    }
-    position_structid_pair_type get_pos_sid_pair_helper(structure_type const& origin_structure, position_type const& position,
-                                                        length_type const& offset, length_type const& rl, rng_type& rng) const
-    {
-        return this->get_pos_sid_pair_helper_any<structure_type >(origin_structure, position, offset, rl, rng);
-    }
+//     position_structid_pair_type get_pos_sid_pair_helper(CuboidalRegion<traits_type> const& origin_structure, position_type const& position,
+//                                                         length_type const& offset, length_type const& rl, rng_type& rng) const
+//     {
+//         return this->get_pos_sid_pair_helper_any<CuboidalRegion<traits_type> >(origin_structure, position, offset, rl, rng);
+//     }
+//     position_structid_pair_type get_pos_sid_pair_helper(SphericalSurface<traits_type> const& origin_structure, position_type const& position,
+//                                                         length_type const& offset, length_type const& rl, rng_type& rng) const
+//     {
+//         return this->get_pos_sid_pair_helper_any<SphericalSurface<traits_type> >(origin_structure, position, offset, rl, rng);
+//     }
+//     position_structid_pair_type get_pos_sid_pair_helper(CylindricalSurface<traits_type> const& origin_structure, position_type const& position,
+//                                                         length_type const& offset, length_type const& rl, rng_type& rng) const
+//     {
+//         return this->get_pos_sid_pair_helper_any<CylindricalSurface<traits_type> >(origin_structure, position, offset, rl, rng);
+//     }
+//     position_structid_pair_type get_pos_sid_pair_helper(DiskSurface<traits_type> const& origin_structure, position_type const& position,
+//                                                         length_type const& offset, length_type const& rl, rng_type& rng) const
+//     {
+//         return this->get_pos_sid_pair_helper_any<DiskSurface<traits_type> >(origin_structure, position, offset, rl, rng);
+//     }
+//     position_structid_pair_type get_pos_sid_pair_helper(PlanarSurface<traits_type> const& origin_structure, position_type const& position,
+//                                                         length_type const& offset, length_type const& rl, rng_type& rng) const
+//     {
+//         return this->get_pos_sid_pair_helper_any<PlanarSurface<traits_type> >(origin_structure, position, offset, rl, rng);
+//     }
+//     position_structid_pair_type get_pos_sid_pair_helper(structure_type const& origin_structure, position_type const& position,
+//                                                         length_type const& offset, length_type const& rl, rng_type& rng) const
+//     {
+//         return this->get_pos_sid_pair_helper_any<structure_type >(origin_structure, position, offset, rl, rng);
+//     }
+//     // The template function that defines the actual final dispatch procedure.
+//     template<typename Tstruct_>
+//     position_structid_pair_type get_pos_sid_pair_helper_any(Tstruct_ const& origin_structure, position_type const& position,
+//                                                             length_type const& offset, length_type const& rl, rng_type& rng) const
+//     {
+//         // redirect to structure function with well-defined typing
+//         return ::get_pos_sid_pair<traits_type>(origin_structure, *this, position, offset, rl, rng); 
+//     };
     // The template function that defines the actual final dispatch procedure.
     template<typename Tstruct_>
-    position_structid_pair_type get_pos_sid_pair_helper_any(Tstruct_ const& origin_structure, position_type const& position,
-                                                            length_type const& offset, length_type const& rl, rng_type& rng) const
-    {
-        // redirect to structure function with well-defined typing
-        return ::get_pos_sid_pair<traits_type>(origin_structure, *this, position, offset, rl, rng); 
-    };
+    position_structid_pair_type get_pos_sid_pair_helper(Tstruct_ const& origin_structure, position_type const& position,
+                                                            length_type const& offset, length_type const& rl, rng_type& rng) const;    
     
     // The template function that defines the actual final dispatch procedure.
 //     template<typename Tstruct_>
