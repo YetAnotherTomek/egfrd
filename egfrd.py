@@ -1211,7 +1211,9 @@ class EGFRDSimulator(ParticleSimulatorBase):
                             out_pos = newpos2
                             in_pos  = newpos1
 
-                        assert(newpos1_is_out * newpos2_is_out == 0)
+                        if newpos1_is_out * newpos2_is_out > 0:
+                            log.warning('Single reaction on adjacent planes: Both particles are outside of reactant_structure: reactant_pos=%s, iv=%s, newpos1=%s, newpos2=%s' % (reactant_structure, iv, newpos1, newpos2) )
+                            assert(newpos1_is_out * newpos2_is_out == 0)
                             # at most one particle should be out if the CoM did not move out of the plane!
 
                         if(newpos1_is_out or newpos2_is_out):
