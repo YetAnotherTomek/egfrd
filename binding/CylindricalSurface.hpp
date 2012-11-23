@@ -20,7 +20,7 @@ inline boost::python::objects::class_base register_cylindrical_surface_class(cha
                        typename impl_type::structure_id_type,
                        typename impl_type::shape_type>())
         .add_property("shape",
-            make_function((typename impl_type::shape_type const&(impl_type::*)()const)&impl_type::shape, return_value_policy<return_by_value>()))
+            make_function((typename impl_type::shape_type const&(impl_type::*)()const)&impl_type::shape, return_value_policy<reference_existing_object>()))
         ;
 }
 
