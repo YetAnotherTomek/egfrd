@@ -135,12 +135,13 @@ class VTKLogger:
         # Get data.
         particle_data = self.get_particle_data()
         sphere_data, cylinder_data = self.get_sphere_and_cylinder_data()
+        cylindrical_surface_data = self.get_cylindrical_surface_data()
 
         # Write to buffer or file.
         if self.buffer_size:
             # Store in buffer, instead of writing to file directly.
             self.buffer.append((time, self.i, particle_data, sphere_data, 
-                                cylinder_data))
+                                cylinder_data, cylindrical_surface_data))
 
             if self.i > self.buffer_size:
                 # FIFO.
@@ -150,13 +151,14 @@ class VTKLogger:
         else:
             # Write normal log.
             self.writelog(time, self.i,
-                          (particle_data, sphere_data, cylinder_data))
+                          (particle_data, sphere_data, cylinder_data, \
+                                              cylindrical_surface_data))
 
         self.i += 1
         self.last_time = time
 
     def writelog(self, time, index,
-                 (particle_data, sphere_data, cylinder_data)):
+                 (particle_data, sphere_data, cylinder_data, cylsurf_data)):
         # There are 4 cases to consider (a bit tricky):
         # I.   i=0, extra_particle_step=True
         # II.  i=1, extra_particle_step=True.
@@ -169,16 +171,19 @@ class VTKLogger:
                 # Case I.
                 sphere_data_1 = self.get_dummy_sphere_data()
                 cylinder_data_1 = self.get_dummy_cylinder_data()
+                cylsurf_data_1  = self.get_dummy_cylinder_data()
             else:
                 # Case II.
                 sphere_data_1 = self.previous_sphere_data
                 cylinder_data_1 = self.previous_cylinder_data
+                cylsurf_data_1  = self.previous_cylsurf_data
 
             index *= 2;
 
             self.make_snapshot('particle_data', particle_data, index, time)
             self.make_snapshot('sphere_data', sphere_data_1, index, time)
             self.make_snapshot('cylinder_data', cylinder_data_1, index, time)
+            self.make_snapshot('cylindrical_surface_data', cylsurf_data_1, index, time)
 
             # Continue with case. 
             time *= (1 + self.delta_t / 2)
@@ -188,17 +193,21 @@ class VTKLogger:
             # Case III.
             sphere_data_2 = self.get_dummy_sphere_data()
             cylinder_data_2 = self.get_dummy_cylinder_data()
+            cylsurf_data_2  = self.get_dummy_cylinder_data()
         else:
             # Case IV.
             sphere_data_2 = sphere_data
             cylinder_data_2 = cylinder_data
+            cylsurf_data_2  = cylsurf_data
 
         self.make_snapshot('particle_data', particle_data, index, time)
         self.make_snapshot('sphere_data', sphere_data_2, index, time)
         self.make_snapshot('cylinder_data', cylinder_data_2, index, time)
+        self.make_snapshot('cylindrical_surface_data', cylsurf_data_2, index, time)
 
         self.previous_sphere_data = sphere_data
         self.previous_cylinder_data = cylinder_data
+        self.previous_cylsurf_data  = cylsurf_data
 
     def make_snapshot(self, type, data, index='', time=None):
         # Write data to .vtu files.
@@ -259,6 +268,13 @@ class VTKLogger:
                 cylinder_data[1].extend(dummy_cylinder_data[1])
                 cylinder_data[2].extend(dummy_cylinder_data[2])
                 cylinder_data[3].extend(dummy_cylinder_data[3])
+
+                dummy_cylsurf_data = self.get_dummy_cylinder_data()
+                cylsurf_data = entry[4]
+                cylsurf_data[0].extend(dummy_cylsurf_data[0])
+                cylsurf_data[1].extend(dummy_cylsurf_data[1])
+                cylsurf_data[2].extend(dummy_cylsurf_data[2])
+                cylsurf_data[3].extend(dummy_cylsurf_data[3])
 
             if index % 100 == 0 and index > 0:
                 print('vtklogger finished writing from buffer up to step %s' % 
