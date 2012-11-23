@@ -77,6 +77,15 @@ public:
     {
         return half_length_;
     }
+    
+    void set_length(length_type L)
+    {
+        length_type hl_diff( L/2.0 - half_length() );
+        position_type new_pos( add(position(), multiply(unit_z(), hl_diff)) );
+        
+        position_ = new_pos;
+        half_length_ = L/2.0;
+    }
 
     std::string show(int precision)
     {
@@ -246,6 +255,15 @@ random_position(Cylinder<T> const& shape, Trng& rng)
     // -1 < rng() < 1. See for example CylindricalSurface.hpp.
     return add(shape.position(),
                multiply(shape.unit_z(), rng() * shape.half_length()));
+}
+
+/*** Cylinder dynamics helper functions ***/
+template<typename T_>
+inline void
+set_length_inline(Cylinder<T_> const& obj,
+                  typename Cylinder<T_>::length_type const& L  )
+{    
+    
 }
 
 template<typename T_>
