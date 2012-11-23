@@ -136,7 +136,7 @@ public:
     BasicSurfaceImpl(structure_name_type const& name, structure_type_id_type const& sid, structure_id_type const& parent_struct_id, shape_type const& shape)
         : base_type(name, sid, parent_struct_id), shape_(shape) {}
 
-protected:
+private:
     shape_type shape_;
 };
 
