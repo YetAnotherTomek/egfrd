@@ -7,6 +7,8 @@
 #include "Shape.hpp"
 #include "linear_algebra.hpp"
 
+#include <iostream>
+
 // Todo. Make sure cylinder is never larger than 1 cellsize or something.  
 template<typename T_>
 class Cylinder
@@ -78,15 +80,18 @@ public:
         return half_length_;
     }
     
+    /*** Cylinder dynamics helper function ***/
     void set_length(length_type L)
-    {
-        length_type hl_diff( L/2.0 - half_length() );
-        position_type new_pos( add(position(), multiply(unit_z(), hl_diff)) );
+    {                  
+        length_type half_L( (double)L/2.0 );
+        length_type hl_diff( subtract(half_L, this->half_length() ) );
+        position_type new_pos( add(this->position(), multiply(this->unit_z(), hl_diff)) );        
         
         position_ = new_pos;
-        half_length_ = L/2.0;
+        half_length_ = half_L;       
     }
 
+    /*** Infostream for debugging ***/
     std::string show(int precision)
     {
         std::ostringstream strm;
@@ -255,15 +260,6 @@ random_position(Cylinder<T> const& shape, Trng& rng)
     // -1 < rng() < 1. See for example CylindricalSurface.hpp.
     return add(shape.position(),
                multiply(shape.unit_z(), rng() * shape.half_length()));
-}
-
-/*** Cylinder dynamics helper functions ***/
-template<typename T_>
-inline void
-set_length_inline(Cylinder<T_> const& obj,
-                  typename Cylinder<T_>::length_type const& L  )
-{    
-    
 }
 
 template<typename T_>
