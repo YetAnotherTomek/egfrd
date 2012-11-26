@@ -340,7 +340,7 @@ def create_rod(world, cyl_structure_type, cap_structure_type, name, position, ra
     back_cap = model.create_disk_surface(back_cap_sid, name+'_back_cap', back_cap_pos, radius, [-o[0],-o[1],-o[2]], rod.id)
     world.add_structure(back_cap)    
 
-    return rod.id
+    return (rod.id, front_cap.id, back_cap.id)
 
 def create_network_rules_wrapper(model):
     return _gfrd.NetworkRulesWrapper(model.network_rules)
