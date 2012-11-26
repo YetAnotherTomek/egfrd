@@ -337,8 +337,8 @@ class Pipeline(object):
             rep3 = self.show(programmable_filter)
             self.set_color(programmable_filter, rep3, color_map=MakeNiceLT)
             rep3.Representation = 'Wireframe'
-            rep3.Opacity = 1.0
-
+            rep3.Opacity = 1.0            
+                        
 
         if SURFACES:
 
@@ -355,8 +355,9 @@ class Pipeline(object):
             rep4.Opacity = 0.5
 
             #### Cylindrical surfaces.
-            cylindrical_surface_data = self.add_extract_block(static, [istart+2], 'b5')
-
+            #cylindrical_surface_data = self.add_extract_block(static, [istart+2], 'b5')
+                # older version, showing static cylinders only
+            cylindrical_surface_data = self.add_extract_block(files, [8], 'b5')
 
             if not HELIX:
                 cylindrical_surfaces = \
@@ -425,18 +426,16 @@ class Pipeline(object):
             planar_surface_data = self.add_extract_block(static, [istart+4], 'b6')
             planar_surfaces = self.add_tensor_glyph(planar_surface_data, 'Box', 
                                                     name='Planar Surfaces')
-
             rep6 = self.show(planar_surfaces)
             rep6.Representation = 'Surface'
             rep6.Opacity = 0.5
 
 
             # Cuboidal surfaces.
-            cuboidal_region_data = self.add_extract_block(static, [istart+6], 'b7')
+            cuboidal_region_data = self.add_extract_block(static, [istart+6], 'b8')
             cuboidal_regions = self.add_tensor_glyph(cuboidal_region_data,
                                                      'Box',
                                                      name='Cuboidal Regions')
-
             rep7 = self.show(cuboidal_regions)
             rep7.Representation = 'Wireframe'
             rep7.Opacity = 1.0
