@@ -65,6 +65,12 @@ public:
     {
         return unit_z_;
     }
+    
+    /*** Cylinder dynamics helper function ***/
+    void move_to(position_type new_pos)
+    {                                  
+        position_ = new_pos;
+    }
 
     std::string show(int precision)
     {
