@@ -115,7 +115,7 @@ class VTKLogger:
         """
         time = self.sim.t
         if (abs(time - self.last_time) < 1e-9) and self.show_shells:
-            # Hack to make ParaView understand this is a different 
+            # HACK to make ParaView understand this is a different 
             # simulator step but with the same time.
             #
             # This is needed because:
@@ -183,7 +183,7 @@ class VTKLogger:
             self.make_snapshot('particle_data', particle_data, index, time)
             self.make_snapshot('sphere_data', sphere_data_1, index, time)
             self.make_snapshot('cylinder_data', cylinder_data_1, index, time)
-            self.make_snapshot('cylindrical_surface_data', cylsurf_data_1, index, time)
+            self.make_snapshot('cylindrical_surface_data', cylsurf_data_1, index, time)  ### TESTING
 
             # Continue with case. 
             time *= (1 + self.delta_t / 2)
@@ -203,7 +203,7 @@ class VTKLogger:
         self.make_snapshot('particle_data', particle_data, index, time)
         self.make_snapshot('sphere_data', sphere_data_2, index, time)
         self.make_snapshot('cylinder_data', cylinder_data_2, index, time)
-        self.make_snapshot('cylindrical_surface_data', cylsurf_data_2, index, time)
+        self.make_snapshot('cylindrical_surface_data', cylsurf_data_2, index, time)  ### TESTING
 
         self.previous_sphere_data = sphere_data
         self.previous_cylinder_data = cylinder_data
@@ -270,7 +270,7 @@ class VTKLogger:
                 cylinder_data[3].extend(dummy_cylinder_data[3])
 
                 dummy_cylsurf_data = self.get_dummy_cylinder_data()
-                cylsurf_data = entry[4]
+                cylsurf_data = entry[5]
                 cylsurf_data[0].extend(dummy_cylsurf_data[0])
                 cylsurf_data[1].extend(dummy_cylsurf_data[1])
                 cylsurf_data[2].extend(dummy_cylsurf_data[2])
