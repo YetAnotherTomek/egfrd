@@ -81,10 +81,11 @@ inline boost::python::objects::class_base register_cylinder_class(char const* na
                     impl_type,
                     typename impl_type::position_type,
                     &impl_type::unit_z,
-                    &impl_type::unit_z>::set))
+                    &impl_type::unit_z>::set))        
+        .def("set_length", &impl_type::set_length)
+        .def("set_half_length", &impl_type::set_half_length)
         .def("__str__", &Cylinder___str__<impl_type>)
-        .def("show", &impl_type::show)
-        .def("set_length", &impl_type::set_length);
+        .def("show", &impl_type::show);
 }
 
 } // namespace binding

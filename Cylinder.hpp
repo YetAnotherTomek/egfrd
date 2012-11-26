@@ -80,10 +80,19 @@ public:
         return half_length_;
     }
     
-    /*** Cylinder dynamics helper function ***/
+    /*** Cylinder dynamics helper functions ***/
     void set_length(length_type L)
     {                  
         length_type half_L( (double)L/2.0 );
+        length_type hl_diff( subtract(half_L, this->half_length() ) );
+        position_type new_pos( add(this->position(), multiply(this->unit_z(), hl_diff)) );        
+        
+        position_ = new_pos;
+        half_length_ = half_L;       
+    }
+    
+    void set_half_length(length_type half_L)
+    {                  
         length_type hl_diff( subtract(half_L, this->half_length() ) );
         position_type new_pos( add(this->position(), multiply(this->unit_z(), hl_diff)) );        
         
