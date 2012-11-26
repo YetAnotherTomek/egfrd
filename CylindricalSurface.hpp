@@ -431,10 +431,19 @@ public:
     virtual void accept(MutativeStructureVisitor<traits_type> const& visitor)
     {
         visitor(*this);
-    }
+    }        
 
     CylindricalSurface(structure_name_type const& name, structure_type_id_type const& sid, structure_id_type const& parent_struct_id, shape_type const& shape)
-        : base_type(name, sid, parent_struct_id, shape) {}
+        : base_type(name, sid, parent_struct_id, shape), growth_rate(0.0), catastrophy_rate(0.0) {}
+        
+    CylindricalSurface(structure_name_type const& name, structure_type_id_type const& sid, structure_id_type const& parent_struct_id, shape_type const& shape,
+                       Real growth_rate, Real catastrophy_rate)
+        : base_type(name, sid, parent_struct_id, shape), growth_rate(growth_rate), catastrophy_rate(catastrophy_rate) {}
+        
+    private:
+      
+    Real growth_rate;
+    Real catastrophy_rate;
 };
 
 #endif /* CYLINDRICAL_SURFACE_HPP */
