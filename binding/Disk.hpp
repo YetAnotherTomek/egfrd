@@ -67,6 +67,7 @@ inline boost::python::objects::class_base register_disk_class(char const* name)
                     typename impl_type::position_type,
                     &impl_type::unit_z,
                     &impl_type::unit_z>::set))
+        .def("move_to", &impl_type::move_to)
         .def("__str__", &Disk___str__<impl_type>)
         .def("show", &impl_type::show);
 
