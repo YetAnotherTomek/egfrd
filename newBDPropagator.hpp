@@ -866,6 +866,8 @@ private:
                                       boost::lexical_cast<std::string>( reactant1_structure->sid()).c_str() ));
                         LOG_DEBUG(("  Note: product_structure_type_id = %s", boost::lexical_cast<std::string>( product_structure_type_id).c_str() ));                        
                         LOG_DEBUG(("  Note: reactants_CoM=%s", boost::lexical_cast<std::string>(reactants_CoM).c_str() ));
+                        LOG_DEBUG(("  Note: reactant0_pos=%s, reactant1_pos=%s", boost::lexical_cast<std::string>(reactant0_pos).c_str(),
+                                                                                 boost::lexical_cast<std::string>(reactant1_pos).c_str() ));
                         
                         const position_structid_pair_type product_info_in_reactant_structure( reactant0_structure->get_pos_sid_pair_2o(*reactant1_structure,
                                                                                                                                         product_structure_type_id,
