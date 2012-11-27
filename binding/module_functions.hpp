@@ -5,6 +5,6 @@ namespace binding {
 
 void register_module_functions();
 
-} // namesapce binding
+} // namespace binding
 
 #endif /* BINDING_MODULE_FUNCTIONS_HPP */

@@ -5,6 +5,7 @@
 #include <boost/python.hpp>
 #include <boost/python/docstring_options.hpp>
 #include "binding_common.hpp"
+#include "Defs.hpp"
 
 namespace binding {
 
@@ -28,8 +29,18 @@ calculate_pair_CoM(Position const& p1,
         world_size);
 }
 
+// Declare method overloads for cyl. surface creators
+// Last two arguments are min. and max. no. of arguments accepted
+// Here in view of the overall complexity we define two overloaders that
+// require 7 (standard case) or 9 (version with rates) arguments exactly.
+BOOST_PYTHON_FUNCTION_OVERLOADS(
+  create_cylindrical_surface_std, StructureUtils::create_cylindrical_surface, 7, 7);
+BOOST_PYTHON_FUNCTION_OVERLOADS(
+  create_cylindrical_surface_with_rates, StructureUtils::create_cylindrical_surface, 9, 9);
+    
 void register_module_functions()
-{
+{ 
+    
     using namespace boost::python;
 
     docstring_options doc_options;
@@ -51,8 +62,28 @@ void register_module_functions()
             return_value_policy<manage_new_object>());
     def("create_spherical_surface", &StructureUtils::create_spherical_surface,
             return_value_policy<manage_new_object>());
-    def("create_cylindrical_surface", &StructureUtils::create_cylindrical_surface,
-            return_value_policy<manage_new_object>());
+    // Define cyl. surface creator, standard version (without rates)
+    def("create_cylindrical_surface", static_cast<CylindricalSurface* (*)(WorldStructureTypeID const&,
+                                                                          StructureName const&,
+                                                                          Position const&,
+                                                                          Length const&,
+                                                                          Position const&,
+                                                                          Length const&,
+                                                                          StructureID const&)> (&StructureUtils::create_cylindrical_surface),
+            create_cylindrical_surface_std()[return_value_policy<manage_new_object>()]
+            );
+    // extended version (with growth/catastrophy rates)
+    def("create_cylindrical_surface", static_cast<CylindricalSurface* (*)(WorldStructureTypeID const&,
+                                                                          StructureName const&,
+                                                                          Position const&,
+                                                                          Length const&,
+                                                                          Position const&,
+                                                                          Length const&,
+                                                                          StructureID const&,
+                                                                          Real const&,
+                                                                          Real const&)> (&StructureUtils::create_cylindrical_surface),
+            create_cylindrical_surface_with_rates()[return_value_policy<manage_new_object>()]
+            );
     def("create_disk_surface", &StructureUtils::create_disk_surface,
             return_value_policy<manage_new_object>());
     def("create_cuboidal_region", &StructureUtils::create_cuboidal_region,
