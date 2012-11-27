@@ -49,7 +49,7 @@ Arguments:
 """
 
 _gfrd.create_cylindrical_surface.__doc__ = \
-"""create_cylindrical_surface(sid, id, corner, radius, orientation, length)
+"""create_cylindrical_surface(sid, id, corner, radius, orientation, length, [growth_rate], [cat_rate])
 
 Create and return a new cylindrical Surface.
 
@@ -70,7 +70,14 @@ Arguments:
         the length of the cylinder. Should be equal to the world_size. 
         Units: meters.
 
-Surfaces are not allowed to touch or overlap.
+Optional:
+    - growth_rate
+        the growth rate of the cylinder if dynamic
+    - cat_rate
+        the catastrophy rate of the cylinder if dynamic
+
+Surfaces are not allowed to touch or overlap, except for disk
+and cyl. surfaces.
 
 """
 
@@ -95,7 +102,8 @@ Arguments:
         the direction of dissociation from the disk if it is a
         cap.
 
-Surfaces are not allowed to touch or overlap.
+Surfaces are not allowed to touch or overlap, except for disk
+and cyl. surfaces.
 
 """
 
@@ -127,9 +135,10 @@ Arguments:
         the length of the plane along the unit vector unit_y. Should be 
         equal to the world_size. Units: meters.
 
-Surfaces are not allowed to overlap.
+Surfaces are not allowed to touch or overlap, except for disk
+and cyl. surfaces.
 
-Todo: allow the user to specify the position of a planar surface 
+TODO: allow the user to specify the position of a planar surface 
 relative to a region.
 
 """
@@ -162,9 +171,10 @@ Arguments:
         the length of the plane along the unit vector unit_y. Should be 
         equal to the world_size. Units: meters.
 
-Surfaces are not allowed to overlap.
+Surfaces are not allowed to touch or overlap, except for disk
+and cyl. surfaces.
 
-Todo: allow the user to specify the position of a planar surface 
+TODO: allow the user to specify the position of a planar surface 
 relative to a region.
 
 """
