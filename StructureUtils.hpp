@@ -111,7 +111,7 @@ struct StructureUtils
     static cylindrical_surface_type* create_cylindrical_surface(
             structure_type_id_type const& sid,
             structure_name_type const& name,
-            position_type const& corner,
+            position_type const& edge_point,
             length_type const& radius,
             position_type const& unit_z,
             length_type const& length,
@@ -120,19 +120,17 @@ struct StructureUtils
         BOOST_ASSERT(is_cartesian_versor(unit_z));
 
         const length_type half_length(length / 2);
-        const position_type pos(add(corner, multiply(unit_z, half_length)));
+        const position_type pos(add(edge_point, multiply(unit_z, half_length)));
 
         return new cylindrical_surface_type(name, sid, parent_struct_id,
-                                            cylinder_type(pos, radius, unit_z, half_length));
-                                            
-        // TODO overload this function to use the overloaded constructor in case
-        // user passes no rates
+                                            cylinder_type(pos, radius, unit_z, half_length));                                            
     }
     
+    // Overloaded version that constructs a cyl. surface with nonzero rates
     static cylindrical_surface_type* create_cylindrical_surface(
             structure_type_id_type const& sid,
             structure_name_type const& name,
-            position_type const& corner,
+            position_type const& edge_point,
             length_type const& radius,
             position_type const& unit_z,
             length_type const& length,
@@ -143,7 +141,7 @@ struct StructureUtils
         BOOST_ASSERT(is_cartesian_versor(unit_z));
 
         const length_type half_length(length / 2);
-        const position_type pos(add(corner, multiply(unit_z, half_length)));
+        const position_type pos(add(edge_point, multiply(unit_z, half_length)));
 
         return new cylindrical_surface_type(name, sid, parent_struct_id,
                                             cylinder_type(pos, radius, unit_z, half_length),
