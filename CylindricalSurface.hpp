@@ -434,16 +434,34 @@ public:
     }        
 
     CylindricalSurface(structure_name_type const& name, structure_type_id_type const& sid, structure_id_type const& parent_struct_id, shape_type const& shape)
-        : base_type(name, sid, parent_struct_id, shape), growth_rate(0.0), catastrophy_rate(0.0) {}
+        : base_type(name, sid, parent_struct_id, shape), growth_rate_(0.0), catastrophy_rate_(0.0) {}
         
     CylindricalSurface(structure_name_type const& name, structure_type_id_type const& sid, structure_id_type const& parent_struct_id, shape_type const& shape,
                        Real growth_rate, Real catastrophy_rate)
-        : base_type(name, sid, parent_struct_id, shape), growth_rate(growth_rate), catastrophy_rate(catastrophy_rate) {}
+        : base_type(name, sid, parent_struct_id, shape), growth_rate_(growth_rate), catastrophy_rate_(catastrophy_rate) {}
         
+        
+    Real& growth_rate() {
+     
+        return growth_rate_;
+    }
+    Real const& growth_rate() const {
+     
+        return growth_rate_;
+    }
+    Real& catastrophy_rate() {
+     
+        return catastrophy_rate_;
+    }
+    Real const& catastrophy_rate() const {
+     
+        return catastrophy_rate_;
+    }    
+    
     private:
       
-    Real growth_rate;
-    Real catastrophy_rate;
+    Real growth_rate_;
+    Real catastrophy_rate_;
 };
 
 #endif /* CYLINDRICAL_SURFACE_HPP */
