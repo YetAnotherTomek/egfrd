@@ -53,6 +53,8 @@ typedef WorldTraits::structure_id_type  StructureID;
 typedef WorldTraits::species_id_type    SpeciesID;
 typedef WorldTraits::species_type       SpeciesInfo;
 typedef WorldTraits::structure_type     Structure;
+typedef WorldTraits::structure_name_type StructureName;
+typedef WorldTraits::structure_type_id_type WorldStructureTypeID;
 typedef StructureType::identifier_type  StructureTypeID;
 typedef WorldTraits::length_type        Length;
 typedef WorldTraits::position_type      Position;
