@@ -49,7 +49,7 @@ Arguments:
 """
 
 _gfrd.create_cylindrical_surface.__doc__ = \
-"""create_cylindrical_surface(sid, id, corner, radius, orientation, length, [growth_rate], [cat_rate])
+"""create_cylindrical_surface(sid, id, edge_point, radius, orientation, length, [growth_rate], [cat_rate])
 
 Create and return a new cylindrical Surface.
 
@@ -58,7 +58,7 @@ Arguments:
         the structure type of the cylindrical surface.
     - id
         the name of the structure
-    - corner
+    - edge_point
         the point [x, y, z] on the axis of the cylinder closest to 
         [0, 0, 0]. Units: [meters, meters, meters]
     - radius
