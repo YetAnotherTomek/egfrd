@@ -41,6 +41,20 @@ inline boost::python::objects::class_base register_cylindrical_surface_class(cha
                     Real,
                     &impl_type::growth_rate,
                     &impl_type::growth_rate>::set))
+        .add_property("catastrophy_rate",
+            make_function(
+                &peer::util::reference_accessor_wrapper<
+                    impl_type,
+                    Real,
+                    &impl_type::catastrophy_rate,
+                    &impl_type::catastrophy_rate>::get,
+                return_value_policy<return_by_value>()),
+            make_function(
+                &peer::util::reference_accessor_wrapper<
+                    impl_type,
+                    Real,
+                    &impl_type::catastrophy_rate,
+                    &impl_type::catastrophy_rate>::set))
         ;
 }
 
