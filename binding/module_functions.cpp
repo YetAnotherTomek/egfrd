@@ -55,6 +55,7 @@ void register_module_functions()
 
     def( "normalize", (Position(*)(Position const&))&normalize<Position> );
     def( "normalize", (Position(*)(Position const&, WorldTraits::length_type const&))&normalize<Position> );
+                      // TODO Does this actually resolve the overload correctly?
     def( "cyclic_transpose", &cyclic_transpose<Position, element_type_of<Position>::type> );
     def("create_planar_surface", &StructureUtils::create_planar_surface,
             return_value_policy<manage_new_object>());
@@ -70,7 +71,9 @@ void register_module_functions()
                                                                           Position const&,
                                                                           Length const&,
                                                                           StructureID const&)> (&StructureUtils::create_cylindrical_surface),
-            create_cylindrical_surface_std()[return_value_policy<manage_new_object>()]
+              create_cylindrical_surface_std(
+                  args("sid", "name", "edge_point", "radius", "orientation", "length"), "" // default docstring 
+              )[return_value_policy<manage_new_object>()]
             );
     // extended version (with growth/catastrophy rates)
     def("create_cylindrical_surface", static_cast<CylindricalSurface* (*)(WorldStructureTypeID const&,
@@ -82,7 +85,9 @@ void register_module_functions()
                                                                           StructureID const&,
                                                                           Real const&,
                                                                           Real const&)> (&StructureUtils::create_cylindrical_surface),
-            create_cylindrical_surface_with_rates()[return_value_policy<manage_new_object>()]
+              create_cylindrical_surface_with_rates(
+                  args("sid", "name", "edge_point", "radius", "orientation", "length", "growth_rate", "catastrophy_rate"), "" // default docstring 
+              )[return_value_policy<manage_new_object>()]
             );
     def("create_disk_surface", &StructureUtils::create_disk_surface,
             return_value_policy<manage_new_object>());
