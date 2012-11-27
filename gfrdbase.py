@@ -327,7 +327,7 @@ def create_rod(world, cyl_structure_type, cap_structure_type, name, position, ra
         back_cap_sid  = back_cap_structure_type.id
          
     # Create the cylinder of the rod
-    rod = model.create_cylindrical_surface(cyl_sid, name+'_cylinder', position, radius, orientation, length, def_struct_id)
+    rod = model.create_cylindrical_surface(cyl_sid, name+'_cylinder', position, radius, orientation, length, def_struct_id, growth_rate, catastrophy_rate)
     world.add_structure(rod) # This must happen directly here otherwise rod.id will be undefined
 
     # Create the caps
