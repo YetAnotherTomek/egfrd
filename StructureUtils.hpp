@@ -124,6 +124,30 @@ struct StructureUtils
 
         return new cylindrical_surface_type(name, sid, parent_struct_id,
                                             cylinder_type(pos, radius, unit_z, half_length));
+                                            
+        // TODO overload this function to use the overloaded constructor in case
+        // user passes no rates
+    }
+    
+    static cylindrical_surface_type* create_cylindrical_surface(
+            structure_type_id_type const& sid,
+            structure_name_type const& name,
+            position_type const& corner,
+            length_type const& radius,
+            position_type const& unit_z,
+            length_type const& length,
+            structure_id_type const& parent_struct_id,
+            Real const& growth_rate,
+            Real const& cat_rate)
+    {
+        BOOST_ASSERT(is_cartesian_versor(unit_z));
+
+        const length_type half_length(length / 2);
+        const position_type pos(add(corner, multiply(unit_z, half_length)));
+
+        return new cylindrical_surface_type(name, sid, parent_struct_id,
+                                            cylinder_type(pos, radius, unit_z, half_length),
+                                            growth_rate, cat_rate);
     }
     
     static disk_surface_type* create_disk_surface(
