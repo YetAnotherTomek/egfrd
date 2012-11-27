@@ -49,7 +49,7 @@ Arguments:
 """
 
 _gfrd.create_cylindrical_surface.__doc__ = \
-"""create_cylindrical_surface(sid, id, edge_point, radius, orientation, length, [growth_rate], [cat_rate])
+"""create_cylindrical_surface(sid, id, edge_point, radius, orientation, length, [growth_rate], [catastrophy_rate])
 
 Create and return a new cylindrical Surface.
 
@@ -73,7 +73,7 @@ Arguments:
 Optional:
     - growth_rate
         the growth rate of the cylinder if dynamic
-    - cat_rate
+    - catastrophy_rate
         the catastrophy rate of the cylinder if dynamic
 
 Surfaces are not allowed to touch or overlap, except for disk
