@@ -255,7 +255,8 @@ def create_box(world, structure_type, center, size, one_sided=True):
     world.connect_structures(bottom, 3, right, 2)
     world.connect_structures(bottom, 2, left, 1)
 
-def create_rod(world, cyl_structure_type, cap_structure_type, name, position, radius, orientation, length, front_cap_structure_type=None, back_cap_structure_type=None):
+def create_rod(world, cyl_structure_type, cap_structure_type, name, position, radius, orientation, length, \
+               front_cap_structure_type=None, back_cap_structure_type=None, growth_rate=0.0, catastrophy_rate=0.0):
     """ Creates a cylinder with two disk-caps at its ends and adds it to the world.
 
         The function ensures that the orientation vectors of the disks point
@@ -295,6 +296,12 @@ def create_rod(world, cyl_structure_type, cap_structure_type, name, position, ra
                 True by default
             - back_cap = [True/False]
                 same as above
+            - growth_rate
+                growth rate of the cylinder if desired to be dynamic
+                0.0 by default
+            - catastrophy_rate
+                catastrophy rate of the cylinder if desired to be dynamic
+                0.0 by default
     """    
     # Assert that the location and size is ok
     position = numpy.array(position)
