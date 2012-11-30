@@ -1208,6 +1208,8 @@ class EGFRDSimulator(ParticleSimulatorBase):
                             newpos1, newpos2 = newposB, newposA
                         product_pos_list.append((newpos1, newpos2))
 
+                        log.debug('fire_single: newpos1=%s, newpos2=%s' % (newpos1, newpos2) )   ### TESTING
+
                 elif isinstance(reactant_structure, CylindricalSurface):
 
                     product_pos_list = []

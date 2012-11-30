@@ -931,9 +931,10 @@ class MixedPair2D3D(Pair, hasCylindricalShell):
 
     @ classmethod 
     def do_back_transform(cls, com, iv, D1, D2, radius1, radius2, structure2D, structure3D, unit_z, world):
-    # here we assume that the com and iv are really in the structure and no adjustments have to be
-    # made
-    #
+    # Here we assume that the com and iv are really in the structure and no adjustments have to be made
+    #         
+    # Note that here unit_z is the dissociation vector, which not necessarily is the normal 
+    # vector of structure 2D!
     # structure3D is not used here but has to be passed because of the classmethod property
 
         D_tot = D1 + D2
@@ -941,8 +942,9 @@ class MixedPair2D3D(Pair, hasCylindricalShell):
         weight2 = D2 / D_tot
 
 #       min_iv_z_length = radius2
-        # get a sence of scale of the separation between the particle and the membrane
+        # get a sense of scale of the separation between the particle and the membrane
         min_iv_z_length = (radius1 + radius2) * 0.5 * (MINIMAL_SEPARATION_FACTOR - 1.0)
+                          # (MINIMAL_SEPARATION_FACTOR - 1.0) usually equals TOLERANCE
 
         # get the coordinates of the iv relative to the system of the surface (or actually the shell)
         iv_x = structure2D.shape.unit_x * numpy.dot(iv, structure2D.shape.unit_x)
@@ -961,11 +963,15 @@ class MixedPair2D3D(Pair, hasCylindricalShell):
         if iv_z_length < min_iv_z_length:
             iv_z_length = min_iv_z_length #* MINIMAL_SEPARATION_FACTOR
 
+        assert iv_z_length >= 0.0
+
         iv_z = unit_z * iv_z_length
 
-        pos1 = com - weight1 * (iv_x + iv_y)
-        pos2 = com + weight2 * (iv_x + iv_y) + iv_z 
+        pos1 = com - weight1 * (iv_x + iv_y)            # the new 2D position
+        pos2 = com + weight2 * (iv_x + iv_y) + iv_z     # the new 3D position
 
+        log.debug('do_back_transform: iv_z = %s, unit_z = %s, com = %s, iv = %s' % (iv_z, unit_z, com, iv) )   ### TESTING
+        log.debug('do_back_transform: pos1 = %s, pos2 = %s' % (pos1, pos2) )   ### TESTING
         # Class method; so don't use self.(..)
         return pos1, pos2, structure2D.id, structure3D.id
 
