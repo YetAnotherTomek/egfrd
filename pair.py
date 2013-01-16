@@ -682,6 +682,8 @@ class PlanarSurfaceTransitionPair(SimplePair, hasSphericalShell):
         # If the new positions lead to an overlap we have to enlarge the IV by a safety factor
         if world.distance(new_pos1, new_pos2) <= (radius1+radius2) * MINIMAL_SEPARATION_FACTOR :
 
+            log.warn('Removing overlap in PlanarSurfaceTransitionPair')
+
             new_structure1 = world.get_structure(new_sid1)
             new_structure2 = world.get_structure(new_sid2)
 
@@ -724,8 +726,11 @@ class PlanarSurfaceTransitionPair(SimplePair, hasSphericalShell):
 
         if event_type == EventType.IV_REACTION:
             # Express the new CoM in plane1 and deflect it to plane2 if necessary
+            # TODO This should be taken care of by apply_boundary() in the main routine            
             s1_ctr = self.structure1.shape.position
             new_com, changeflag = self.structure2.deflect(s1_ctr, new_com - s1_ctr)
+            if __debug__:
+                log.debug('Deflected new_com on structure2, changeflag=%s' % str(changeflag))
 
         # TODO: Check whether the new CoM is in the right structure
         return new_com
@@ -921,10 +926,10 @@ class MixedPair2D3D(Pair, hasCylindricalShell):
                        FORMAT_DOUBLE % a_R, FORMAT_DOUBLE % tR,
                        FORMAT_DOUBLE % (tr-tR) ))
 
-#        assert feq(tr, tR), 'estimate first passage times were not equal'
+#        assert feq(tr, tR), 'estimate first passage times were not equal'  ## FIXME
 
-        # Some checks that shall never fail
-        assert (self.sigma < a_r) and (a_r < 2.0*shell_half_length)
+        # Some checks that shall never fail        
+        assert (self.sigma < a_r) and (a_r < 2.0*shell_half_length * self.z_scaling_factor)
         assert (0 < a_R) and (a_R < shell_radius)
 
         return a_R, a_r
