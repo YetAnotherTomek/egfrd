@@ -20,6 +20,7 @@ noinst_HEADERS = \
 	cylinder_class.hpp \
 	Cylinder.hpp \
 	CylindricalSurface.hpp \
+	cylinder_scaling.hpp \
 	disk_class.hpp \
 	Disk.hpp \
 	DiskSurface.hpp \
@@ -100,6 +101,7 @@ libbinding_utils_la_SOURCES = \
 	box_class.cpp \
 	ConsoleAppender.cpp \
 	cylinder_class.cpp \
+	cylinder_scaling.cpp \
 	disk_class.cpp \
 	domain_classes.cpp \
 	domain_id_class.cpp \

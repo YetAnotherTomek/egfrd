@@ -20,6 +20,7 @@
 #include "../Box.hpp"
 #include "../Plane.hpp"
 #include "../Point.hpp"
+#include "../CylinderScaling.hpp"
 #include "../Model.hpp"
 #include "../ParticleModel.hpp"
 #include "../World.hpp"

@@ -8,7 +8,7 @@
 
 namespace binding {
 
-static Position 
+static Position
 calculate_pair_CoM(Position const& p1, 
                    Position const& p2, 
                    element_type_of< Position >::type const& D1,
@@ -26,7 +26,8 @@ calculate_pair_CoM(Position const& p1,
             add(multiply(p1, D2), multiply(p2t, D1)),
             add(D1, D2)),
         world_size);
-}
+        
+} // TODO why is this isolated here?
 
 void register_module_functions()
 {
