@@ -23,16 +23,20 @@
 
 
 
-
+// TESTING
 template <typename Ttraits_>
-std::pair<typename Ttraits_::length_type, std::pair<typename Ttraits_::length_type, typename Ttraits_::length_type> >
+Ttraits_::position_type
 get_dr_dzright_dzleft_to_CylindricalShape_helper( typename Ttraits_::position_type      const& pos,
                                                   typename Ttraits_::length_type        const& l1,
                                                   typename Ttraits_::length_type        const& l2   )
 {
+  
+    typedef typename Ttraits_::position_type    position_type;
+    typedef typename Ttraits_::length_type      length_type;
 
-    // TESTING
-    return std::make_pair( l1*l2, return std::make_pair(l1, l2) );
+    position_type return_vector( pos );         // only pass on pos for now
+      
+    return return_vector;
   
 };
                                                   

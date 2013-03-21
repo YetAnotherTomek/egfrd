@@ -26,7 +26,7 @@
 
 
 template <typename Ttraits_>
-std::pair<typename Ttraits_::length_type, std::pair<typename Ttraits_::length_type, typename Ttraits_::length_type> >
+Ttraits_::position_type
 get_dr_dzright_dzleft_to_CylindricalShape_helper( typename Ttraits_::position_type      const& pos,
                                                   typename Ttraits_::length_type        const& l1,
                                                   typename Ttraits_::length_type        const& l2   );
