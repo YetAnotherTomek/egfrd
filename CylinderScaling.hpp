@@ -20,6 +20,7 @@
 
 #include "findRoot.hpp"
 #include "funcSum.hpp"
+#include "geometry.hpp"
 
 #include "Logger.hpp"
 
@@ -35,7 +36,7 @@ get_dr_dzright_dzleft_to_CylindricalShape_helper( typename Ttraits_::position_ty
     typedef typename Ttraits_::position_type    position_type;
     typedef typename Ttraits_::length_type      length_type;
 
-    position_type return_vector( pos );         // only pass on pos for now
+    position_type return_vector( multiply( pos, l1) );         // TESTING some test output to check functionality of geometry and type conversion
       
     return return_vector;
   
