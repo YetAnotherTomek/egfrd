@@ -14,6 +14,7 @@ from _gfrd import (
     Plane,
     PlanarSurface,
     CuboidalRegion,
+    get_dr_dzright_dzleft_to_orthogonal_CylindricalShape
     )
 
 from utils import *
@@ -830,7 +831,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     # Laurens' algorithm (part2)
     shell_position = shape.position
     shell_radius = shape.radius 
-    shell_half_length = shape.half_length 
+    shell_half_length = shape.half_length
 
     # Get the reference point and orientation of the domain to scale
     reference_point = testShell.get_referencepoint()
@@ -859,6 +860,10 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         z2_function = testShell.z_left
         z1 = z_right
         z2 = z_left
+
+        # TESTING
+        test_output = get_dr_dzright_dzleft_to_orthogonal_CylindricalShape(shell_position, shell_radius, testShell.z_right(shell_radius), "wrapped_z_right")
+        log.info("TESTING: shell_position=%s, shell_radius=%s, testShell.z_right(shell_radius)=%s   => test_output=%s" % (shell_position, shell_radius, testShell.z_right(shell_radius), test_output) )
     # else -> use z_left
     else:
         direction = -1
@@ -2862,6 +2867,21 @@ class MixedPair1DCaptestShell(CylindricaltestShell, testMixedPair1DCap):
                          iv_shell_size2 + com_shell_size + radius2 * SINGLE_SHELL_FACTOR)
 
         return shell_size
+
+
+# TESTING
+# These are just wrappers for embedding into C++
+def wrapped_r_right(z_right):
+        return CylindricaltestShell.drdz_right
+
+def wrapped_z_right(self, r_right):
+        return CylindricaltestShell.dzdr_right
+
+def wrapped_r_left(self, z_left):
+        return CylindricaltestShell.drdz_left
+
+def wrapped_z_left(self, r_left):
+        return CylindricaltestShell.dzdr_left
 
 #####
 #class MixedPair3D1DtestShell(CylindricaltestShell, Others):
