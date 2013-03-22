@@ -28,9 +28,9 @@
 
 template <typename Ttraits_>
 typename Ttraits_::position_type
-get_dr_dzright_dzleft_to_CylindricalShape_helper( typename Ttraits_::position_type      const& pos,
-                                                  typename Ttraits_::length_type        const& l1,
-                                                  typename Ttraits_::length_type        const& l2   )
+get_dr_dzright_dzleft_to_orthogonal_CylindricalShape( typename Ttraits_::position_type      const& pos,
+                                                      typename Ttraits_::length_type        const& l1,
+                                                      typename Ttraits_::length_type        const& l2   )
 {
   
     typedef typename Ttraits_::position_type    position_type;
