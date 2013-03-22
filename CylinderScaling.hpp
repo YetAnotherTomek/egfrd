@@ -29,21 +29,17 @@ template <typename Ttraits_>
 typename Ttraits_::position_type
 get_dr_dzright_dzleft_to_CylindricalShape_helper( typename Ttraits_::position_type      const& pos,
                                                   typename Ttraits_::length_type        const& l1,
-                                                  typename Ttraits_::length_type        const& l2   );
+                                                  typename Ttraits_::length_type        const& l2   )
+{
+  
+    typedef typename Ttraits_::position_type    position_type;
+    typedef typename Ttraits_::length_type      length_type;
 
-
-                                                  
-
-                                                  
-
-
-
-
-
-
-
-
-
+    position_type return_vector( pos );         // only pass on pos for now
+      
+    return return_vector;
+  
+};
 
 
 

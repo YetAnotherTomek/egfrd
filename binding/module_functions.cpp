@@ -62,4 +62,5 @@ void register_module_functions()
     def("random_position", (Position(*)(Structure const&, GSLRandomNumberGenerator&))&StructureUtils::random_position);
 }
 
+
 } // namespace binding

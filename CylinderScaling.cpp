@@ -23,12 +23,13 @@
 
 
 
-// TESTING
+// TODO the cpp file is not really needed any more
 template <typename Ttraits_>
 typename Ttraits_::position_type
 get_dr_dzright_dzleft_to_CylindricalShape_helper( typename Ttraits_::position_type      const& pos,
                                                   typename Ttraits_::length_type        const& l1,
                                                   typename Ttraits_::length_type        const& l2   )
+
 {
   
     typedef typename Ttraits_::position_type    position_type;
