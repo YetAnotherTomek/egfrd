@@ -863,6 +863,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
 
         # TESTING
         test_output = get_dr_dzright_dzleft_to_orthogonal_CylindricalShape(shell_position, shell_radius, testShell.z_right(shell_radius), "wrapped_z_right")
+        #print type(test_output[0])
         log.info("TESTING: shell_position=%s, shell_radius=%s, testShell.z_right(shell_radius)=%s   => test_output=%s" % (shell_position, shell_radius, testShell.z_right(shell_radius), test_output) )
     # else -> use z_left
     else:
@@ -2872,16 +2873,16 @@ class MixedPair1DCaptestShell(CylindricaltestShell, testMixedPair1DCap):
 # TESTING
 # These are just wrappers for embedding into C++
 def wrapped_r_right(z_right):
-        return CylindricaltestShell.drdz_right
+        return CylindricaltestShell.drdz_right(z_right)
 
 def wrapped_z_right(self, r_right):
-        return CylindricaltestShell.dzdr_right
+        return CylindricaltestShell.dzdr_right(r_right)
 
 def wrapped_r_left(self, z_left):
-        return CylindricaltestShell.drdz_left
+        return CylindricaltestShell.drdz_left(z_left)
 
 def wrapped_z_left(self, r_left):
-        return CylindricaltestShell.dzdr_left
+        return CylindricaltestShell.dzdr_left(r_left)
 
 #####
 #class MixedPair3D1DtestShell(CylindricaltestShell, Others):

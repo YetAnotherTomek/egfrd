@@ -17,8 +17,12 @@ void register_cylinder_scaling()
     docstring_options doc_options;
     doc_options.disable_signatures();
 
+    class_<CylinderScalingFunctionsWrap<WorldTraits>, bases<CylinderScalingFunctions<WorldTraits> > >("CylinderScalingFunctions", init<PyObject*>() )
+        .def("r_right", &CylinderScalingFunctions<WorldTraits>::r_right, &CylinderScalingFunctionsWrap<WorldTraits>::r_right_default)
+        ;
+
     //def( "length_sq", &length_sq<Position> );
-    def( "get_dr_dzright_dzleft_to_orthogonal_CylindricalShape", &get_dr_dzright_dzleft_to_orthogonal_CylindricalShape<WorldTraits> );
+    def( "get_dr_dzright_dzleft_to_orthogonal_CylindricalShape", (Position(*)(Position const&, Length const&, Length const&, char*))&get_dr_dzright_dzleft_to_orthogonal_CylindricalShape<WorldTraits> );
 }
 
 
