@@ -1797,35 +1797,6 @@ class PlanarSurfaceTransitionPairtestShell(SphericaltestShell, testPlanarSurface
 
 
 ##########################
-class CylindricaltestShellScalingFunctionsV1(CylinderScalingFunctions):
-
-    def __init__(self, right_scaling_info, left_scaling_info):
-
-        CylinderScalingFunctions.__init__(self, self)   # TODO why does this have to take two self arguments to work?
-
-        self.z0_right = right_scaling_info[0]
-        self.r0_right = right_scaling_info[1]
-        self.drdz_right = right_scaling_info[2]
-        self.dzdr_right = right_scaling_info[3]
-
-        self.z0_left = left_scaling_info[0]
-        self.r0_left = left_scaling_info[1]
-        self.drdz_left = left_scaling_info[2]
-        self.dzdr_left = left_scaling_info[3]
-
-    # These methods are used to calculate the new r/z_right/z_left after one of the parameters 
-    # r/z_right/z_left has changed. The scaling centers (r0, z0) and scaling directions drdz
-    # are defined differently for every testShell.
-    def r_right(self, z_right):
-        return self.drdz_right * (z_right - self.z0_right) + self.r0_right
-    def z_right(self, r_right):
-        return self.dzdr_right * (r_right - self.r0_right) + self.z0_right
-    def r_left(self, z_left):
-        return self.drdz_left * (z_left - self.z0_left) + self.r0_left
-    def z_left(self, r_left):
-        return self.dzdr_left * (r_left - self.r0_left) + self.z0_left
-
-
 class CylindricaltestShellScalingFunctions(CylinderScalingFunctions):
 
     def __init__(self, testShell):
@@ -2051,10 +2022,6 @@ class PlanarSurfaceSingletestShell(CylindricaltestShell, testNonInteractionSingl
         self.r0_left    = 0.0
         self.z0_left    = self.pid_particle_pair[1].radius        
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2118,10 +2085,6 @@ class PlanarSurfacePairtestShell(CylindricaltestShell, testSimplePair):
         self.r0_left    = 0.0
         self.z0_left    = self.z0_right
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2188,10 +2151,6 @@ class CylindricalSurfaceSingletestShell(CylindricaltestShell, testNonInteraction
         self.r0_left    = self.dr_const
         self.z0_left    = 0.0
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2266,10 +2225,6 @@ class DiskSurfaceSingletestShell(CylindricaltestShell, testNonInteractionSingle)
         self.r0_left    = self.dr_const
         self.z0_left    = 0.0
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2332,10 +2287,6 @@ class CylindricalSurfacePairtestShell(CylindricaltestShell, testSimplePair):
         self.r0_left    = self.dr_const
         self.z0_left    = 0.0
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2404,10 +2355,6 @@ class PlanarSurfaceInteractiontestShell(CylindricaltestShell, testInteractionSin
         self.r0_left    = 0.0
         self.z0_left    = self.pid_particle_pair[1].radius
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2475,10 +2422,6 @@ class CylindricalSurfaceInteractiontestShell(CylindricaltestShell, testInteracti
         self.r0_left    = self.r0_right
         self.z0_left    = self.z0_right
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2552,10 +2495,6 @@ class CylindricalSurfaceCapInteractiontestShell(CylindricaltestShell, testIntera
         self.r0_left    = self.dr_const
         self.z0_left    = self.pid_particle_pair[1].radius * math.sqrt(MULTI_SHELL_FACTOR**2 - 1.0)
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2620,10 +2559,6 @@ class CylindricalSurfaceSinktestShell(CylindricaltestShell, testInteractionSingl
         self.r0_left    = self.dr_const
         self.z0_left    = self.z0_right
 
-        #self.ScalingFunctions = CylindricaltestShellScalingFunctionsV1(
-                                  #right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  #left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                #)
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
@@ -2780,7 +2715,7 @@ class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunction
 
         return r_right        
 
-#####
+
 class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
 
     def __init__(self, single2D, single3D, geometrycontainer, domains):
