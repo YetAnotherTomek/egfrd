@@ -37,7 +37,8 @@
 //Logger& loclog_(Logger::get_logger("ecell.CylinderScaling"));
 
 
-
+// Declare a base class with bogus scaling methods which will
+// be overridden in Python via a derived class
 template <typename Ttraits_>
 class CylinderScalingFunctions
 {
@@ -56,11 +57,11 @@ class CylinderScalingFunctions
 template <typename Ttraits_>
 typename Ttraits_::length_type calls_r_right(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type z) { return CSF.r_right(z); };
 
-//
 // Wrapping Code
-//
 
-// Dispatcher class
+// Define a dispatcher class derived from the base class which takes
+// a Python class as a parameter and overrides the methods of the
+// base class with the Python methods via boost::python::call_method
 template <typename Ttraits_>
 class CylinderScalingFunctionsWrap : public CylinderScalingFunctions<Ttraits_>
 {
