@@ -2685,31 +2685,101 @@ class CylindricalSurfaceSinktestShell(CylindricaltestShell, testInteractionSingl
 #####
 class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunctions):
 
-    def __init__(self, right_scaling_info, left_scaling_info):
+    def __init__(self, testShell):
 
-        CylinderScalingFunctions.__init__(self, self)
+        CylinderScalingFunctions.__init__(self, self)   # TODO why do we have to pass self two times here?
 
-        self.z0_right = right_scaling_info[0]
-        self.r0_right = right_scaling_info[1]
-        self.drdz_right = right_scaling_info[2]
-        self.dzdr_right = right_scaling_info[3]
+        self.z0_right = testShell.z0_right
+        self.r0_right = testShell.r0_right
+        self.drdz_right = testShell.drdz_right
+        self.dzdr_right = testShell.dzdr_right
 
-        self.z0_left = left_scaling_info[0]
-        self.r0_left = left_scaling_info[1]
-        self.drdz_left = left_scaling_info[2]
-        self.dzdr_left = left_scaling_info[3]
+        self.z0_left = testShell.z0_left
+        self.r0_left = testShell.r0_left
+        self.drdz_left = testShell.drdz_left
+        self.dzdr_left = testShell.dzdr_left
 
-    # These methods are used to calculate the new r/z_right/z_left after one of the parameters 
-    # r/z_right/z_left has changed. The scaling centers (r0, z0) and scaling directions drdz
-    # are defined differently for every testShell.
-    def r_right(self, z_right):
-        return self.drdz_right * (z_right - self.z0_right) + self.r0_right
+
+    # self.z_left() and self.r_left() are inherited from the standard class (CylindricaltestShellScalingFunctions)
+
     def z_right(self, r_right):
-        return self.dzdr_right * (r_right - self.r0_right) + self.z0_right
-    def r_left(self, z_left):
-        return self.drdz_left * (z_left - self.z0_left) + self.r0_left
-    def z_left(self, r_left):
-        return self.dzdr_left * (r_left - self.r0_left) + self.z0_left
+        # This calculates the height z_right of the newly constructed domain
+        # (above the plane) if the radius r is known
+
+        # The trivial case
+        if r_right == 0.0:
+            return 0.0
+
+        # Some constants that we need
+        radius2D = testShell.particle2D.radius
+        radius3D = testShell.particle3D.radius
+        D_2D = testShell.particle2D.D
+        D_3D = testShell.particle3D.D
+
+        # calculate a_r such that the expected first-passage for the CoM and IV are equal        
+        a_r_2D = (r_right - radius2D + testShell.r0*testShell.sqrt_DRDr ) / (testShell.sqrt_DRDr + (D_2D/testShell.D_tot) )
+        a_r_3D = (r_right - radius3D + testShell.r0*testShell.sqrt_DRDr ) / (testShell.sqrt_DRDr + (D_3D/testShell.D_tot) )        
+        # take the smaller a_r that, if entered in the function for r below, would lead to this r_right
+        a_r = min(a_r_2D, a_r_3D)
+
+        z_right = (a_r/testShell.get_scaling_factor()) + radius3D
+
+        if r_right < 0.0 or z_right <0.0:
+            log.warning('Negative cylinder dimensions in MixedPair2D3DtestShell: z_right= %s, r_right=%s' % (z_right, r_right) )
+
+        if abs(z_right) < abs(r_right) * TOLERANCE:
+            log.warning('Setting z_right to zero within TOLERANCE in MixedPair2D3DtestShell, z_right=%s' % str(z_right))
+            z_right = 0.0
+
+        return z_right
+
+    def r_right(self, z_right):
+        # This calculates the radius r of the newly constructed domain
+        # if the height z_right is known
+
+        # The trivial case
+        if z_right == 0.0:
+            return 0.0
+
+        # Some constants that we need
+        radius2D = testShell.particle2D.radius
+        radius3D = testShell.particle3D.radius
+        D_2D = testShell.particle2D.D
+        D_3D = testShell.particle3D.D
+
+        # We first calculate the a_r, since it is the only radius that depends on z_right only.
+        # The dependence is given by the scaling factor that converts spherical coordinates into
+        # prolate spheroidal coordinates
+        a_r = (z_right - radius3D) * testShell.get_scaling_factor()
+
+        # We equalize the estimated first passage time for the CoM (2D) and IV (3D) for a given a_r
+        # via a_R/(a_r-self.r0) == sqrt(4 D_R t)/sqrt(6 D_r t) (for an arbitrary t).
+        # This gives us a CoM domain radius a_R as a function of a_r at equal expected first passage time.
+        # Note that for the IV we only take the distance to the outer boundary into account.
+        a_R = (a_r - testShell.r0)*testShell.sqrt_DRDr
+
+        # We calculate the maximum space needed for particles A and B based on maximum IV displacement
+        # taking into account the particle radii
+        iv_max = max( (D_2D/testShell.D_tot * a_r + radius2D),
+                      (D_3D/testShell.D_tot * a_r + radius3D))
+
+        # The total domain radius is then given by the sum of the max. IV displacement and
+        # the estimated a_R value for the same first passage time
+        r_right = a_R + iv_max
+
+        if r_right < 0.0 or z_right <0.0:  ### TESTING; remove when stable (or should we keep it?)
+            log.warning('Negative cylinder dimensions in MixedPair2D3DtestShell: z_right= %s, r_right=%s' % (z_right, r_right) )
+
+        assert feq(self.z_right(r_right), z_right), 'Inconsistent r_right function in MixedPair2D3DtestShell: \
+                                                     z_right= %s, z_right(r_right)=%s, r_right=%s' % \
+                                                     (z_right, self.z_right(r_right), r_right)
+
+        if abs(r_right) < abs(z_right) * TOLERANCE:
+            log.warning('Setting r_right to zero within TOLERANCE in MixedPair2D3DtestShell, r_right=%s' % str(r_right))
+            r_right = 0.0
+
+        return r_right        
+
 #####
 class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
 
@@ -2741,6 +2811,8 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         self.drdz_left  = numpy.inf
         self.r0_left    = 0.0
         self.z0_left    = self.particle2D.radius
+
+        self.ScalingFunctions = MixedPair2D3DtestShellScalingFunctions(self)
 
         # TODO This is probably not needed any more:
         min_r, min_dz_right, _ = self.get_min_dr_dzright_dzleft()
@@ -2832,84 +2904,6 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         dz_right = self.z_right(dr)
 
         return dr, dz_right, dz_left
-
-    def z_right(self, r_right):
-        # This calculates the height z_right of the newly constructed domain
-        # (above the plane) if the radius r is known
-
-        # The trivial case
-        if r_right == 0.0:
-            return 0.0
-
-        # Some constants that we need
-        radius2D = self.particle2D.radius
-        radius3D = self.particle3D.radius
-        D_2D = self.particle2D.D
-        D_3D = self.particle3D.D
-
-        # calculate a_r such that the expected first-passage for the CoM and IV are equal        
-        a_r_2D = (r_right - radius2D + self.r0*self.sqrt_DRDr ) / (self.sqrt_DRDr + (D_2D/self.D_tot) )
-        a_r_3D = (r_right - radius3D + self.r0*self.sqrt_DRDr ) / (self.sqrt_DRDr + (D_3D/self.D_tot) )        
-        # take the smaller a_r that, if entered in the function for r below, would lead to this r_right
-        a_r = min(a_r_2D, a_r_3D)
-
-        z_right = (a_r/self.get_scaling_factor()) + radius3D
-
-        if r_right < 0.0 or z_right <0.0:
-            log.warning('Negative cylinder dimensions in MixedPair2D3DtestShell: z_right= %s, r_right=%s' % (z_right, r_right) )
-
-        if abs(z_right) < abs(r_right) * TOLERANCE:
-            log.warning('Setting z_right to zero within TOLERANCE in MixedPair2D3DtestShell, z_right=%s' % str(z_right))
-            z_right = 0.0
-
-        return z_right
-
-    def r_right(self, z_right):
-        # This calculates the radius r of the newly constructed domain
-        # if the height z_right is known
-
-        # The trivial case
-        if z_right == 0.0:
-            return 0.0
-
-        # Some constants that we need
-        radius2D = self.particle2D.radius
-        radius3D = self.particle3D.radius
-        D_2D = self.particle2D.D
-        D_3D = self.particle3D.D
-
-        # We first calculate the a_r, since it is the only radius that depends on z_right only.
-        # The dependence is given by the scaling factor that converts spherical coordinates into
-        # prolate spheroidal coordinates
-        a_r = (z_right - radius3D) * self.get_scaling_factor()
-
-        # We equalize the estimated first passage time for the CoM (2D) and IV (3D) for a given a_r
-        # via a_R/(a_r-self.r0) == sqrt(4 D_R t)/sqrt(6 D_r t) (for an arbitrary t).
-        # This gives us a CoM domain radius a_R as a function of a_r at equal expected first passage time.
-        # Note that for the IV we only take the distance to the outer boundary into account.
-        a_R = (a_r - self.r0)*self.sqrt_DRDr
-
-        # We calculate the maximum space needed for particles A and B based on maximum IV displacement
-        # taking into account the particle radii
-        iv_max = max( (D_2D/self.D_tot * a_r + radius2D),
-                      (D_3D/self.D_tot * a_r + radius3D))
-
-        # The total domain radius is then given by the sum of the max. IV displacement and
-        # the estimated a_R value for the same first passage time
-        r_right = a_R + iv_max
-
-        if r_right < 0.0 or z_right <0.0:  ### TESTING; remove when stable (or should we keep it?)
-            log.warning('Negative cylinder dimensions in MixedPair2D3DtestShell: z_right= %s, r_right=%s' % (z_right, r_right) )
-
-        assert feq(self.z_right(r_right), z_right), 'Inconsistent r_right function in MixedPair2D3DtestShell: \
-                                                     z_right= %s, z_right(r_right)=%s, r_right=%s' % \
-                                                     (z_right, self.z_right(r_right), r_right)
-
-        if abs(r_right) < abs(z_right) * TOLERANCE:
-            log.warning('Setting r_right to zero within TOLERANCE in MixedPair2D3DtestShell, r_right=%s' % str(r_right))
-            r_right = 0.0
-
-        return r_right
 
     def apply_safety(self, r, z_right, z_left):
         SAFETY = 1.1 # FIXME What the hell is that? Why is that not the standard?
