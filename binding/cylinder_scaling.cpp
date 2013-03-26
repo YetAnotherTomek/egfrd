@@ -19,7 +19,10 @@ void register_cylinder_scaling()
 
     // Bind the overridden CylinderScalingFunctions class into Python; the derived class takes a Python class as an argument
     // and overrides the bogus methods defined in the base class by the Python methods
-    class_<CylinderScalingFunctionsWrap<WorldTraits>, bases<CylinderScalingFunctions<WorldTraits> > >("CylinderScalingFunctions", init<PyObject*>() )
+    class_<CylinderScalingFunctions<WorldTraits> >("CylinderScalingFunctionsBase");
+    
+    class_<CylinderScalingFunctionsWrap<WorldTraits>, bases<CylinderScalingFunctions<WorldTraits> >, boost::shared_ptr<CylinderScalingFunctionsWrap<WorldTraits> >, boost::noncopyable >
+         ("CylinderScalingFunctions", init<PyObject*>() )
         .def("r_right", &CylinderScalingFunctions<WorldTraits>::r_right, &CylinderScalingFunctionsWrap<WorldTraits>::r_right_default)
         .def("z_right", &CylinderScalingFunctions<WorldTraits>::z_right, &CylinderScalingFunctionsWrap<WorldTraits>::z_right_default)
         .def("r_left", &CylinderScalingFunctions<WorldTraits>::r_left, &CylinderScalingFunctionsWrap<WorldTraits>::r_left_default)
@@ -38,3 +41,4 @@ void register_cylinder_scaling()
 
 
 } // namespace binding
+
