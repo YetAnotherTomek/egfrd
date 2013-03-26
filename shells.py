@@ -2618,21 +2618,13 @@ class CylindricalSurfaceSinktestShell(CylindricaltestShell, testInteractionSingl
         return r, z_right/SAFETY, z_left/SAFETY
 
 #####
-class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunctions):
+class MixedPair2D3DtestShellScalingFunctions(CylinderScalingFunctions):
 
     def __init__(self, testShell):
 
         CylinderScalingFunctions.__init__(self, self)   # TODO why do we have to pass self two times here?
 
-        self.z0_right = testShell.z0_right
-        self.r0_right = testShell.r0_right
-        self.drdz_right = testShell.drdz_right
-        self.dzdr_right = testShell.dzdr_right
-
-        self.z0_left = testShell.z0_left
-        self.r0_left = testShell.r0_left
-        self.drdz_left = testShell.drdz_left
-        self.dzdr_left = testShell.dzdr_left
+        self.testShell = testShell
 
 
     # self.z_left() and self.r_left() are inherited from the standard class (CylindricaltestShellScalingFunctions)
@@ -2646,18 +2638,18 @@ class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunction
             return 0.0
 
         # Some constants that we need
-        radius2D = testShell.particle2D.radius
-        radius3D = testShell.particle3D.radius
-        D_2D = testShell.particle2D.D
-        D_3D = testShell.particle3D.D
+        radius2D = self.testShell.particle2D.radius
+        radius3D = self.testShell.particle3D.radius
+        D_2D = self.testShell.particle2D.D
+        D_3D = self.testShell.particle3D.D
 
         # calculate a_r such that the expected first-passage for the CoM and IV are equal        
-        a_r_2D = (r_right - radius2D + testShell.r0*testShell.sqrt_DRDr ) / (testShell.sqrt_DRDr + (D_2D/testShell.D_tot) )
-        a_r_3D = (r_right - radius3D + testShell.r0*testShell.sqrt_DRDr ) / (testShell.sqrt_DRDr + (D_3D/testShell.D_tot) )        
+        a_r_2D = (r_right - radius2D + self.testShell.r0*self.testShell.sqrt_DRDr ) / (self.testShell.sqrt_DRDr + (D_2D/self.testShell.D_tot) )
+        a_r_3D = (r_right - radius3D + self.testShell.r0*self.testShell.sqrt_DRDr ) / (self.testShell.sqrt_DRDr + (D_3D/self.testShell.D_tot) )        
         # take the smaller a_r that, if entered in the function for r below, would lead to this r_right
         a_r = min(a_r_2D, a_r_3D)
 
-        z_right = (a_r/testShell.get_scaling_factor()) + radius3D
+        z_right = (a_r/self.testShell.get_scaling_factor()) + radius3D
 
         if r_right < 0.0 or z_right <0.0:
             log.warning('Negative cylinder dimensions in MixedPair2D3DtestShell: z_right= %s, r_right=%s' % (z_right, r_right) )
@@ -2677,26 +2669,26 @@ class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunction
             return 0.0
 
         # Some constants that we need
-        radius2D = testShell.particle2D.radius
-        radius3D = testShell.particle3D.radius
-        D_2D = testShell.particle2D.D
-        D_3D = testShell.particle3D.D
+        radius2D = self.testShell.particle2D.radius
+        radius3D = self.testShell.particle3D.radius
+        D_2D = self.testShell.particle2D.D
+        D_3D = self.testShell.particle3D.D
 
         # We first calculate the a_r, since it is the only radius that depends on z_right only.
         # The dependence is given by the scaling factor that converts spherical coordinates into
         # prolate spheroidal coordinates
-        a_r = (z_right - radius3D) * testShell.get_scaling_factor()
+        a_r = (z_right - radius3D) * self.testShell.get_scaling_factor()
 
         # We equalize the estimated first passage time for the CoM (2D) and IV (3D) for a given a_r
         # via a_R/(a_r-self.r0) == sqrt(4 D_R t)/sqrt(6 D_r t) (for an arbitrary t).
         # This gives us a CoM domain radius a_R as a function of a_r at equal expected first passage time.
         # Note that for the IV we only take the distance to the outer boundary into account.
-        a_R = (a_r - testShell.r0)*testShell.sqrt_DRDr
+        a_R = (a_r - self.testShell.r0)*self.testShell.sqrt_DRDr
 
         # We calculate the maximum space needed for particles A and B based on maximum IV displacement
         # taking into account the particle radii
-        iv_max = max( (D_2D/testShell.D_tot * a_r + radius2D),
-                      (D_3D/testShell.D_tot * a_r + radius3D))
+        iv_max = max( (D_2D/self.testShell.D_tot * a_r + radius2D),
+                      (D_3D/self.testShell.D_tot * a_r + radius3D))
 
         # The total domain radius is then given by the sum of the max. IV displacement and
         # the estimated a_R value for the same first passage time
@@ -2737,6 +2729,11 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         # interparticle vector (towards z_right) are equal (see self.r_right(), self.z_right() below).
         self.iv_z_minimum = self.r0 + self.particle3D.radius * SINGLE_SHELL_FACTOR
             # this is an upper bound, actually the height of the domain could be slightly lower than this
+
+        # In contrast to the other cylindrical test shells, this has to be assigned first 
+        # because below we already use the scaling functions
+        self.ScalingFunctions = MixedPair2D3DtestShellScalingFunctions(self)
+
         self.drdz_right = self.r_right(self.iv_z_minimum) / self.iv_z_minimum
         self.dzdr_right = 1.0/self.drdz_right        
 
@@ -2747,8 +2744,6 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         self.r0_left    = 0.0
         self.z0_left    = self.particle2D.radius
 
-        self.ScalingFunctions = MixedPair2D3DtestShellScalingFunctions(self)
-
         # TODO This is probably not needed any more:
         min_r, min_dz_right, _ = self.get_min_dr_dzright_dzleft()
 
@@ -2757,7 +2752,7 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         self.left_scalingangle  = self.get_left_scalingangle()
         # In particular store the tangent, because math.tan is expensive!
         self.tan_right_scalingangle = math.tan(self.right_scalingangle)
-        self.tan_left_scalingangle  = math.tan(self.left_scalingangle)
+        self.tan_left_scalingangle  = math.tan(self.left_scalingangle)        
 
         # This will determine if the shell is possible.
         # If possible, it will write the dr, dz_right, dz_left defining the dimensions of the cylindrical shell.
@@ -2798,9 +2793,6 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         # with the accompanying radius r1
         dr_1 = self.r_right(dz_right1)
 
-  
-
-
 #        ### calculate the minimal radius r2 of the shell including the burst radius
 #        # First calculate the minimal size of the iv shell (r0 is at outer boundary)
 #        iv_shell_radius1 = self.r0 * D_1 / self.D_tot
@@ -2825,6 +2817,17 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         dz_left  = self.particle2D.radius
 
         return dr, dz_right, dz_left
+
+    # TESTING These are simple wrappers now and defined by a separate class to make the methods
+    # accessible to C++ functions outside of the CylindricaltestShell class
+    def r_right(self, z_right):
+        return self.ScalingFunctions.r_right(z_right)
+    def z_right(self, r_right):
+        return self.ScalingFunctions.z_right(r_right)
+    def r_left(self, z_left):
+        return self.ScalingFunctions.r_left(z_left)
+    def z_left(self, r_left):
+        return self.ScalingFunctions.z_left(r_left)
         
     def get_max_dr_dzright_dzleft(self):
         # TODO this can be improved
@@ -2877,10 +2880,7 @@ class MixedPair1DCaptestShell(CylindricaltestShell, testMixedPair1DCap):
         self.r0_left    = self.dr_const
         self.z0_left    = self.cap_particle.radius * SINGLE_SHELL_FACTOR
 
-        self.ScalingFunctions = CylindricaltestShellScalingFunctions(
-                                  right_scaling_info = [self.z0_right, self.r0_right, self.drdz_right, self.dzdr_right], 
-                                  left_scaling_info  = [self.z0_left,  self.r0_left,  self.drdz_left,  self.dzdr_left ], 
-                                )
+        self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
         self.right_scalingangle = self.get_right_scalingangle()
