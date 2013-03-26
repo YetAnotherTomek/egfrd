@@ -2817,17 +2817,6 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         dz_left  = self.particle2D.radius
 
         return dr, dz_right, dz_left
-
-    # TESTING These are simple wrappers now and defined by a separate class to make the methods
-    # accessible to C++ functions outside of the CylindricaltestShell class
-    def r_right(self, z_right):
-        return self.ScalingFunctions.r_right(z_right)
-    def z_right(self, r_right):
-        return self.ScalingFunctions.z_right(r_right)
-    def r_left(self, z_left):
-        return self.ScalingFunctions.r_left(z_left)
-    def z_left(self, r_left):
-        return self.ScalingFunctions.z_left(r_left)
         
     def get_max_dr_dzright_dzleft(self):
         # TODO this can be improved
