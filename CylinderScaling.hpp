@@ -33,6 +33,7 @@
 
 
 
+
 /*** LOGGER ***/
 //Logger& loclog_(Logger::get_logger("ecell.CylinderScaling"));
 
@@ -54,8 +55,20 @@ class CylinderScalingFunctions
 };
 
 
+
 template <typename Ttraits_>
 typename Ttraits_::length_type calls_r_right(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type z) { return CSF.r_right(z); };
+
+template <typename Ttraits_>
+typename Ttraits_::length_type calls_z_right(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type r) { return CSF.z_right(r); };
+
+template <typename Ttraits_>
+typename Ttraits_::length_type calls_r_left(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type z) { return CSF.r_left(z); };
+
+template <typename Ttraits_>
+typename Ttraits_::length_type calls_z_left(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type r) { return CSF.z_left(r); };
+
+
 
 // Wrapping Code
 
@@ -177,12 +190,6 @@ get_dr_dzright_dzleft_to_orthogonal_CylindricalShape( typename Ttraits_::positio
     return return_vector;
   
 };
-
-
-
-
-
-
 
 
 
