@@ -27,10 +27,10 @@ void register_cylinder_scaling()
         ;
         
     // Bind the functions that do the double-wrapping magic
-    def("calls_r_right", calls_r_right);
-    def("calls_z_right", calls_z_right);
-    def("calls_r_left", calls_r_left);
-    def("calls_z_left", calls_z_left);
+    def("calls_r_right", &calls_r_right<WorldTraits>);
+    def("calls_z_right", &calls_z_right<WorldTraits>);
+    def("calls_r_left", &calls_r_left<WorldTraits>);
+    def("calls_z_left", &calls_z_left<WorldTraits>);
 
     //def( "length_sq", &length_sq<Position> );
     def( "get_dr_dzright_dzleft_to_orthogonal_CylindricalShape", (Position(*)(Position const&, Length const&, Length const&, char*))&get_dr_dzright_dzleft_to_orthogonal_CylindricalShape<WorldTraits> );

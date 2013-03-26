@@ -57,16 +57,16 @@ class CylinderScalingFunctions
 
 
 template <typename Ttraits_>
-typename Ttraits_::length_type calls_r_right(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type z) { return CSF.r_right(z); };
+typename Ttraits_::length_type calls_r_right(CylinderScalingFunctions<Ttraits_> *CSF, typename Ttraits_::length_type z) { return CSF->r_right(z); };
 
 template <typename Ttraits_>
-typename Ttraits_::length_type calls_z_right(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type r) { return CSF.z_right(r); };
+typename Ttraits_::length_type calls_z_right(CylinderScalingFunctions<Ttraits_> *CSF, typename Ttraits_::length_type r) { return CSF->z_right(r); };
 
 template <typename Ttraits_>
-typename Ttraits_::length_type calls_r_left(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type z) { return CSF.r_left(z); };
+typename Ttraits_::length_type calls_r_left(CylinderScalingFunctions<Ttraits_> *CSF, typename Ttraits_::length_type z) { return CSF->r_left(z); };
 
 template <typename Ttraits_>
-typename Ttraits_::length_type calls_z_left(CylinderScalingFunctions<Ttraits_> const& CSF, typename Ttraits_::length_type r) { return CSF.z_left(r); };
+typename Ttraits_::length_type calls_z_left(CylinderScalingFunctions<Ttraits_> *CSF, typename Ttraits_::length_type r) { return CSF->z_left(r); };
 
 
 
