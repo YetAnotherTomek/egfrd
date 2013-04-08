@@ -22,19 +22,20 @@ void register_cylinder_scaling()
     class_<CylinderScalingFunctions<WorldTraits> >("CylinderScalingFunctionsBase");
     
     class_<CylinderScalingFunctionsWrap<WorldTraits>, bases<CylinderScalingFunctions<WorldTraits> >, boost::shared_ptr<CylinderScalingFunctionsWrap<WorldTraits> >, boost::noncopyable >
-         ("CylinderScalingFunctions", init<PyObject*>() )
+         ("CylinderScalingFunctions", init<PyObject*>() )   // here we also specify that the constructor gets a pointer to the (possibly derived) Python version of the wrapped class
         .def("r_right", &CylinderScalingFunctions<WorldTraits>::r_right, &CylinderScalingFunctionsWrap<WorldTraits>::r_right_default)
         .def("z_right", &CylinderScalingFunctions<WorldTraits>::z_right, &CylinderScalingFunctionsWrap<WorldTraits>::z_right_default)
         .def("r_left", &CylinderScalingFunctions<WorldTraits>::r_left, &CylinderScalingFunctionsWrap<WorldTraits>::r_left_default)
         .def("z_left", &CylinderScalingFunctions<WorldTraits>::z_left, &CylinderScalingFunctionsWrap<WorldTraits>::z_left_default)
         ;
         
-    // Bind the functions that do the double-wrapping magic
+    // Bind the functions that call the class methods after the double-wrapping magic
     def("calls_r_right", &calls_r_right<WorldTraits>);
     def("calls_z_right", &calls_z_right<WorldTraits>);
     def("calls_r_left", &calls_r_left<WorldTraits>);
     def("calls_z_left", &calls_z_left<WorldTraits>);
 
+    // Bind the actual cylinder scaling functions
     //def( "length_sq", &length_sq<Position> );
     def( "get_dr_dzright_dzleft_to_orthogonal_CylindricalShape", (Position(*)(Position const&, Length const&, Length const&, char*))&get_dr_dzright_dzleft_to_orthogonal_CylindricalShape<WorldTraits> );
 }

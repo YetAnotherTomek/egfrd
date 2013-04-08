@@ -34,7 +34,7 @@
 
 
 
-/*** LOGGER ***/
+/*** LOGGER ***/        // FIXME
 //Logger& loclog_(Logger::get_logger("ecell.CylinderScaling"));
 
 
@@ -46,7 +46,9 @@ class CylinderScalingFunctions
  public:
    
     typedef typename Ttraits_::length_type      length_type;
-    
+
+    // Here we define virtual default functions which can be overridden by both C++ and Python
+    // classes derived from this base class
     virtual length_type r_right(length_type z) { return 0.0; };
     virtual length_type z_right(length_type r) { return 0.0; };
     virtual length_type r_left(length_type z)  { return 0.0; };
@@ -55,7 +57,7 @@ class CylinderScalingFunctions
 };
 
 
-
+// These are testing methods to call methods of the wrapped class
 template <typename Ttraits_>
 typename Ttraits_::length_type calls_r_right(CylinderScalingFunctions<Ttraits_> *CSF, typename Ttraits_::length_type z) { return CSF->r_right(z); };
 
@@ -78,24 +80,30 @@ typename Ttraits_::length_type calls_z_left(CylinderScalingFunctions<Ttraits_> *
 template <typename Ttraits_>
 class CylinderScalingFunctionsWrap : public CylinderScalingFunctions<Ttraits_>
 {
-  public:
-    
-    typedef typename Ttraits_::length_type      length_type;
-    
-    // Store a pointer to the Python object
-    CylinderScalingFunctionsWrap(PyObject* self_) : self(self_) {};
-    PyObject* self;
+  
+  typedef typename Ttraits_::length_type      length_type;
+  
+  public:       
+
+    // The constructor takes a (potentially) derived Python version of
+    // class CylinderScalingFunctions as an argument
+    CylinderScalingFunctionsWrap(PyObject* self_) : self(self_) {};    
 
     // Default implementation, for when functions are not overridden
     length_type r_right_default(length_type z) { return this->CylinderScalingFunctions<Ttraits_>::r_right(z); };
     length_type z_right_default(length_type r) { return this->CylinderScalingFunctions<Ttraits_>::z_right(r); };
     length_type r_left_default(length_type z)  { return this->CylinderScalingFunctions<Ttraits_>::r_left(z); };
     length_type z_left_default(length_type r)  { return this->CylinderScalingFunctions<Ttraits_>::z_left(r); };
-    // Dispatch implementation
+    // Dispatch implementation, using boost::python::call_method on the PyObject* passed to the constructor
     length_type r_right(length_type z) { return boost::python::call_method<length_type>(self, "r_right", z); };
     length_type z_right(length_type r) { return boost::python::call_method<length_type>(self, "z_right", r); };
     length_type r_left(length_type z)  { return boost::python::call_method<length_type>(self, "r_left", z); };
     length_type z_left(length_type r)  { return boost::python::call_method<length_type>(self, "z_left", r); };
+    
+  public:
+    
+    // Store a pointer to the Python object in property this->self
+    PyObject* self;
 };
 
 
