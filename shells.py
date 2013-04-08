@@ -1803,27 +1803,19 @@ class CylindricaltestShellScalingFunctions(CylinderScalingFunctions):
 
         CylinderScalingFunctions.__init__(self, self)   # TODO why does this have to take two self arguments to work?
 
-        self.z0_right = testShell.z0_right
-        self.r0_right = testShell.r0_right
-        self.drdz_right = testShell.drdz_right
-        self.dzdr_right = testShell.dzdr_right
-
-        self.z0_left = testShell.z0_left
-        self.r0_left = testShell.r0_left
-        self.drdz_left = testShell.drdz_left
-        self.dzdr_left = testShell.dzdr_left
+        self.testShell = testShell
 
     # These methods are used to calculate the new r/z_right/z_left after one of the parameters 
     # r/z_right/z_left has changed. The scaling centers (r0, z0) and scaling directions drdz
     # are defined differently for every testShell.
     def r_right(self, z_right):
-        return self.drdz_right * (z_right - self.z0_right) + self.r0_right
+        return self.testShell.drdz_right * (z_right - self.testShell.z0_right) + self.testShell.r0_right
     def z_right(self, r_right):
-        return self.dzdr_right * (r_right - self.r0_right) + self.z0_right
+        return self.testShell.dzdr_right * (r_right - self.testShell.r0_right) + self.testShell.z0_right
     def r_left(self, z_left):
-        return self.drdz_left * (z_left - self.z0_left) + self.r0_left
+        return self.testShell.drdz_left * (z_left - self.testShell.z0_left) + self.testShell.r0_left
     def z_left(self, r_left):
-        return self.dzdr_left * (r_left - self.r0_left) + self.z0_left
+        return self.testShell.dzdr_left * (r_left - self.testShell.r0_left) + self.testShell.z0_left
 
 
 class CylindricaltestShell(testShell):
@@ -1930,8 +1922,9 @@ class CylindricaltestShell(testShell):
     # These methods are used to calculate the new r/z_right/z_left after one of the parameters 
     # r/z_right/z_left has changed. The scaling centers (r0, z0) and scaling directions drdz
     # are defined differently for every testShell.
-    # TESTING These are simple wrappers now and defined by a separate class to make the methods
-    # accessible to C++ functions outside of the CylindricaltestShell class
+    # TESTING These are simple wrappers now and defined by a separate class that can be passed 
+    # to subclasses of this testShell class.
+    # This way we make the methods accessible to C++ functions outside of the testShell class
     def r_right(self, z_right):
         return self.ScalingFunctions.r_right(z_right)
     def z_right(self, r_right):
