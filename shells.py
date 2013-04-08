@@ -856,7 +856,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
                                 # Otherwise problems when direction = 0
         scale_angle     = testShell.right_scalingangle
         tan_scale_angle = testShell.tan_right_scalingangle
-        scale_center_r, scale_center_z = testShell.right_scalingcenter 
+        scale_center_r, scale_center_z = testShell.right_scalingcenter
         r1_function = testShell.r_right
         z1_function = testShell.z_right
         z2_function = testShell.z_left

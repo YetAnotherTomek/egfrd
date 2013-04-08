@@ -70,8 +70,6 @@ typename Ttraits_::length_type calls_r_left(CylinderScalingFunctions<Ttraits_> *
 template <typename Ttraits_>
 typename Ttraits_::length_type calls_z_left(CylinderScalingFunctions<Ttraits_> *CSF, typename Ttraits_::length_type r) { return CSF->z_left(r); };
 
-
-
 // Wrapping Code
 
 // Define a dispatcher class derived from the base class which takes
@@ -110,6 +108,63 @@ class CylinderScalingFunctionsWrap : public CylinderScalingFunctions<Ttraits_>
 
 
 
+
+template <typename Ttraits_>
+class CylinderScalingHelperTools
+{
+ 
+  typedef typename Ttraits_::length_type      length_type;
+  typedef typename Ttraits_::length_type      position_type;
+  
+  typedef int                                 direction_type;
+  
+  // define scaling helper function type to later define an array
+  // of scaling functions with direction_type index
+  typedef length_type (*scaling_function_type)(length_type);
+  
+  
+  public:
+    
+    CylinderScalingHelperTools(CylinderScalingFunctions<Ttraits_> *CSF_) : CSF(CSF_)
+    {
+         // Assign the scaling functions to the array for the two different directions
+         // direction = -1 (direction_index = 0)
+         r1_functions[0] = this.CSF->r_left;
+         z1_functions[0] = this.CSF->z_left;
+         z2_functions[0] = this.CSF->z_right;
+         // direction = +1 (direction_index = 1)
+         r1_functions[1] = this.CSF->r_right;                  
+         z1_functions[1] = this.CSF->z_right;         
+         z2_functions[1] = this.CSF->z_left;
+    };
+    
+    ~CylinderScalingHelperTools() {};
+
+    // master method that calls all the others in the right order
+    inline static position_type get_dr_dzright_dzleft_to_CylindricalShape();
+    // helper methods
+    inline static void determine_direction_and_coordinate_system();
+    inline static position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape();
+    inline static position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape();
+    
+    
+  public:
+    
+    CylinderScalingFunctions<Ttraits_> *CSF;
+    
+    direction_type      direction;
+    int                 direction_index; // to address the methods in the scaling function pointer arrays
+                                         // has to start from zero, so we have to map direction=-1 to direction_index=0
+    
+    position_type       orientation_vector;
+    position_type       ref_to_shell_vector;
+    
+    // array of scaling methods - we have to call different ones depending on the direction
+    // determined initially
+    static scaling_function_type r1_functions[2];
+    static scaling_function_type z1_functions[2];
+    static scaling_function_type z2_functions[2];    
+};
 
 
 
