@@ -53,7 +53,7 @@ class CylinderScalingFunctions
     virtual length_type z_right(length_type r) { return 0.0; };
     virtual length_type r_left(length_type z)  { return 0.0; };
     virtual length_type z_left(length_type r)  { return 0.0; };
-    //virtual ~CylinderScalingFunctions();      // FIXME why does it not link properly with this included? -> Check for memory leaks!
+    virtual ~CylinderScalingFunctions() {};
 };
 
 
@@ -88,6 +88,7 @@ class CylinderScalingFunctionsWrap : public CylinderScalingFunctions<Ttraits_>
     // The constructor takes a (potentially) derived Python version of
     // class CylinderScalingFunctions as an argument
     CylinderScalingFunctionsWrap(PyObject* self_) : self(self_) {};    
+    ~CylinderScalingFunctionsWrap() {};
 
     // Default implementation, for when functions are not overridden
     length_type r_right_default(length_type z) { return this->CylinderScalingFunctions<Ttraits_>::r_right(z); };
