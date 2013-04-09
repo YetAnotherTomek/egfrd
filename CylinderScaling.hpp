@@ -120,11 +120,12 @@ class CylinderScalingHelperTools
   
   // define scaling helper function type to later define an array
   // of scaling functions with direction_type index
-  typedef length_type (CylinderScalingHelperTools<Ttraits_>::* scaling_function_type)(length_type);
+  typedef length_type (CylinderScalingHelperTools<Ttraits_>::* scaling_function_pt_type)(length_type);
   
   
-  public:       // methods
+  public:       // METHODS
     
+    // constructor
     CylinderScalingHelperTools(CylinderScalingFunctionsWrap<Ttraits_> *CSF_, Real scale_angle_) : 
       CSF(CSF_), scale_angle(scale_angle_)
     {
@@ -140,21 +141,18 @@ class CylinderScalingHelperTools
          
          tan_scale_angle = std::tan(scale_angle);
     };
+    // destructor
+    ~CylinderScalingHelperTools() {};        
+
     
-    ~CylinderScalingHelperTools() {};
-
-    // master method that calls all the others in the right order
-    //inline static position_type get_dr_dzright_dzleft_to_CylindricalShape();
-    // helper methods
-    //inline static void determine_direction_and_coordinate_system();
-    inline static position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape();
-    inline static position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape();    
-
+    // master method that calls downstream helper methods in the right order
     inline static position_type get_dr_dzright_dzleft_to_CylindricalShape()
     {
-        return position_type();
+        return position_type(); // bogus object
     };
     
+    // methods for TESTING whether scaling functions passed to this class
+    // via CylinderScalingFunctionsWrap class are correctly invoked from Python
     length_type test_r1_function(length_type z)  // TESTING
     {
         this->direction_index = int(scale_angle == 1.0 ? 1 : 0);
@@ -169,9 +167,18 @@ class CylinderScalingHelperTools
         return (this->*z1_function[this->direction_index])(r);
     };
     
-  private:
+    
+  private:          // helper methods
 
     inline static void determine_direction_and_coordinate_system()
+    {
+    };
+    
+    inline static position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape()
+    {
+    };
+    
+    inline static position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape()
     {
     };
     
@@ -183,7 +190,7 @@ class CylinderScalingHelperTools
     length_type z_left (length_type r){  return CSF->z_left(r);  };
     length_type z_right(length_type r){  return CSF->z_right(r); };
     
-  public:       // properties
+  public:       // PROPERTIES
     
     CylinderScalingFunctionsWrap<Ttraits_> *CSF;
     
@@ -200,9 +207,9 @@ class CylinderScalingHelperTools
     
     // array of scaling methods - we have to call different ones depending on the direction
     // determined initially
-    scaling_function_type r1_function[2];
-    scaling_function_type z1_function[2];
-    scaling_function_type z2_function[2];
+    scaling_function_pt_type r1_function[2];
+    scaling_function_pt_type z1_function[2];
+    scaling_function_pt_type z2_function[2];
 
 };
 
