@@ -132,11 +132,11 @@ class CylinderScalingHelperTools
          // direction = -1 (direction_index = 0)
          r1_function[0] = &CylinderScalingHelperTools<Ttraits_>::r_left;
          z1_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_left;
-//          z2_function[0] = (scaling_function_type)&z_right;
-//          // direction = +1 (direction_index = 1)
+         z2_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_right;
+         // direction = +1 (direction_index = 1)
          r1_function[1] = &CylinderScalingHelperTools<Ttraits_>::r_right;
          z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
-//          z2_function[1] = (scaling_function_type)&z_left;
+         z2_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_left;
          
          tan_scale_angle = std::tan(scale_angle);
     };
@@ -157,14 +157,14 @@ class CylinderScalingHelperTools
     
     length_type test_r1_function(length_type z)  // TESTING
     {
-        this->direction_index = int(scale_angle);
+        this->direction_index = int(scale_angle == 1.0 ? 1 : 0);
         
         return (this->*r1_function[this->direction_index])(z);
     };
     
     length_type test_z1_function(length_type r)  // TESTING
     {
-        this->direction_index = int(scale_angle);
+        this->direction_index = int(scale_angle == 1.0 ? 1 : 0);
         
         return (this->*z1_function[this->direction_index])(r);
     };
@@ -176,7 +176,8 @@ class CylinderScalingHelperTools
     };
     
     // Wrappers for cylinder scaling functions passed as member functions of CSF
-    // This overhead necessary because C++ cannot form a pointer to a bound member function
+    // This overhead is necessary because C++ cannot directly form a pointer to  
+    // the bound member functions of CSF
     length_type r_left (length_type z){  return CSF->r_left(z);  };
     length_type r_right(length_type z){  return CSF->r_right(z); };
     length_type z_left (length_type r){  return CSF->z_left(r);  };
