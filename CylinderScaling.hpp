@@ -120,54 +120,87 @@ class CylinderScalingHelperTools
   
   // define scaling helper function type to later define an array
   // of scaling functions with direction_type index
-  typedef length_type (*scaling_function_type)(length_type);
+  typedef length_type (CylinderScalingHelperTools<Ttraits_>::* scaling_function_type)(length_type);
   
   
-  public:
+  public:       // methods
     
-    CylinderScalingHelperTools(CylinderScalingFunctions<Ttraits_> *CSF_) : CSF(CSF_)
+    CylinderScalingHelperTools(CylinderScalingFunctionsWrap<Ttraits_> *CSF_, Real scale_angle_) : 
+      CSF(CSF_), scale_angle(scale_angle_)
     {
          // Assign the scaling functions to the array for the two different directions
          // direction = -1 (direction_index = 0)
-         r1_functions[0] = this.CSF->r_left;
-         z1_functions[0] = this.CSF->z_left;
-         z2_functions[0] = this.CSF->z_right;
-         // direction = +1 (direction_index = 1)
-         r1_functions[1] = this.CSF->r_right;                  
-         z1_functions[1] = this.CSF->z_right;         
-         z2_functions[1] = this.CSF->z_left;
+         r1_function[0] = &CylinderScalingHelperTools<Ttraits_>::r_left;
+//          z1_function[0] = (scaling_function_type)&z_left;
+//          z2_function[0] = (scaling_function_type)&z_right;
+//          // direction = +1 (direction_index = 1)
+         r1_function[1] = &CylinderScalingHelperTools<Ttraits_>::r_right;
+//          z1_function[1] = (scaling_function_type)&z_right;
+//          z2_function[1] = (scaling_function_type)&z_left;
+         
+         tan_scale_angle = std::tan(scale_angle);
     };
     
     ~CylinderScalingHelperTools() {};
 
     // master method that calls all the others in the right order
-    inline static position_type get_dr_dzright_dzleft_to_CylindricalShape();
+    //inline static position_type get_dr_dzright_dzleft_to_CylindricalShape();
     // helper methods
-    inline static void determine_direction_and_coordinate_system();
+    //inline static void determine_direction_and_coordinate_system();
     inline static position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape();
-    inline static position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape();
+    inline static position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape();    
+
+    inline static position_type get_dr_dzright_dzleft_to_CylindricalShape()
+    {
+        return position_type();
+    };
     
+    length_type test_r1_function(length_type z)  // TESTING
+    {
+        this->direction_index = int(scale_angle);
+        
+        return (this->*r1_function[this->direction_index])(z);
+    };
     
-  public:
+  private:
+
+    inline static void determine_direction_and_coordinate_system()
+    {
+    };
     
-    CylinderScalingFunctions<Ttraits_> *CSF;
+    // Wrappers for cylinder scaling functions passed as member functions of CSF
+    // This overhead necessary because C++ cannot form a pointer to a bound member function
+    length_type r_left (length_type z){  return CSF->r_left(z);  };
+    length_type r_right(length_type z){  return CSF->r_right(z); };
+    length_type z_left (length_type r){  return CSF->z_left(r);  };
+    length_type z_right(length_type r){  return CSF->z_right(r); };
+    
+  public:       // properties
+    
+    CylinderScalingFunctionsWrap<Ttraits_> *CSF;
     
     direction_type      direction;
     int                 direction_index; // to address the methods in the scaling function pointer arrays
                                          // has to start from zero, so we have to map direction=-1 to direction_index=0
     
     position_type       orientation_vector;
-    position_type       ref_to_shell_vector;
+    position_type       ref_to_shell_vector;    
+    length_type         ref_to_shell_z;
+    
+    Real                scale_angle;
+    Real                tan_scale_angle;
     
     // array of scaling methods - we have to call different ones depending on the direction
     // determined initially
-    static scaling_function_type r1_functions[2];
-    static scaling_function_type z1_functions[2];
-    static scaling_function_type z2_functions[2];    
+    scaling_function_type r1_function[2];
+    scaling_function_type z1_function[2];
+    scaling_function_type z2_function[2];
+
 };
 
 
 
+// OLDER STUFF; TODO Remove when the rest works
 template <typename Ttraits_>
 static typename Ttraits_::position_type
 get_dr_dzright_dzleft_to_orthogonal_CylindricalShape( typename Ttraits_::position_type      const& pos,
@@ -180,7 +213,7 @@ get_dr_dzright_dzleft_to_orthogonal_CylindricalShape( typename Ttraits_::positio
     typedef typename Ttraits_::length_type      length_type;
     
     length_type l3(0.0);
-    double result;
+    //double result;
     
 //     std::cout << "Arguments: pos=" << pos 
 //               << " l1=" << l1

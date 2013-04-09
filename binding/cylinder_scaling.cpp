@@ -22,7 +22,7 @@ void register_cylinder_scaling()
     class_<CylinderScalingFunctions<WorldTraits> >("CylinderScalingFunctionsBase");
     
     class_<CylinderScalingFunctionsWrap<WorldTraits>, bases<CylinderScalingFunctions<WorldTraits> >, boost::shared_ptr<CylinderScalingFunctionsWrap<WorldTraits> >, boost::noncopyable >
-         ("CylinderScalingFunctions", init<PyObject*>() )   // here we also specify that the constructor gets a pointer to the (possibly derived) Python version of the wrapped class
+        ("CylinderScalingFunctions", init<PyObject*>() )   // here we also specify that the constructor gets a pointer to the (possibly derived) Python version of the wrapped class
         .def("r_right", &CylinderScalingFunctions<WorldTraits>::r_right, &CylinderScalingFunctionsWrap<WorldTraits>::r_right_default)
         .def("z_right", &CylinderScalingFunctions<WorldTraits>::z_right, &CylinderScalingFunctionsWrap<WorldTraits>::z_right_default)
         .def("r_left", &CylinderScalingFunctions<WorldTraits>::r_left, &CylinderScalingFunctionsWrap<WorldTraits>::r_left_default)
@@ -34,6 +34,12 @@ void register_cylinder_scaling()
     def("calls_z_right", &calls_z_right<WorldTraits>);
     def("calls_r_left", &calls_r_left<WorldTraits>);
     def("calls_z_left", &calls_z_left<WorldTraits>);
+    
+    class_<CylinderScalingHelperTools<WorldTraits>, boost::shared_ptr<CylinderScalingHelperTools<WorldTraits> >, boost::noncopyable >
+        ("CylinderScalingHelperTools", init<CylinderScalingFunctionsWrap<WorldTraits>*, Real>() )
+        .def("get_dr_dzright_dzleft_to_CylindricalShape", &CylinderScalingHelperTools<WorldTraits>::get_dr_dzright_dzleft_to_CylindricalShape)
+        .def("test_r1_function", &CylinderScalingHelperTools<WorldTraits>::test_r1_function)
+        ;
 
     // Bind the actual cylinder scaling functions
     //def( "length_sq", &length_sq<Position> );
