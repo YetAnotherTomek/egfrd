@@ -131,11 +131,11 @@ class CylinderScalingHelperTools
          // Assign the scaling functions to the array for the two different directions
          // direction = -1 (direction_index = 0)
          r1_function[0] = &CylinderScalingHelperTools<Ttraits_>::r_left;
-//          z1_function[0] = (scaling_function_type)&z_left;
+         z1_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_left;
 //          z2_function[0] = (scaling_function_type)&z_right;
 //          // direction = +1 (direction_index = 1)
          r1_function[1] = &CylinderScalingHelperTools<Ttraits_>::r_right;
-//          z1_function[1] = (scaling_function_type)&z_right;
+         z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
 //          z2_function[1] = (scaling_function_type)&z_left;
          
          tan_scale_angle = std::tan(scale_angle);
@@ -160,6 +160,13 @@ class CylinderScalingHelperTools
         this->direction_index = int(scale_angle);
         
         return (this->*r1_function[this->direction_index])(z);
+    };
+    
+    length_type test_z1_function(length_type r)  // TESTING
+    {
+        this->direction_index = int(scale_angle);
+        
+        return (this->*z1_function[this->direction_index])(r);
     };
     
   private:

@@ -16,7 +16,8 @@ from _gfrd import (
     CuboidalRegion,
     CylinderScalingFunctions,
     calls_z_right,
-    get_dr_dzright_dzleft_to_orthogonal_CylindricalShape
+    get_dr_dzright_dzleft_to_orthogonal_CylindricalShape,
+    CylinderScalingHelperTools
     )
 
 from utils import *
@@ -638,6 +639,22 @@ class hasCylindricalShell(hasShell):
         return CylindricalShell(domain_id, Cylinder(position, radius, orientation, half_length))
 
 
+class ExtendedCylinderScalingHelperTools(CylinderScalingHelperTools):
+
+    def __init__(self, CylinderScalingFunctions, direction):
+        
+        # TODO assert that CylinderScalingFunctions can take the right arguments
+        CylinderScalingHelperTools.__init__( CylinderScalingFunctions, direction )
+
+        self.testShell = testShell
+
+
+    def test_r1_function(z):
+    
+        # just a wrapper
+        return self.test_r1_function(z)
+
+
 ###########################
 # functions to size up a testShell to a spherical shape object.
 def get_dr_dzright_dzleft_to_SphericalShape(shape, testShell, r, z_right, z_left):
@@ -863,10 +880,22 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         z1 = z_right
         z2 = z_left
 
-        # TESTING
+        # TESTING pythonified CylinderScalingFunctions
         test_output_fromPython  = testShell.z_right(shell_radius)
         test_output_fromCPP     = calls_z_right(testShell.ScalingFunctions, shell_radius)
-        log.info("TESTING: shell_position=%s, shell_radius=%s, testShell.z_right(shell_radius)=%s, calls_z_right(shell_radius)=%s" % (shell_position, shell_radius, test_output_fromPython, test_output_fromCPP) )
+        log.info("TESTING CSF: shell_position=%s, shell_radius=%s, testShell.z_right(shell_radius)=%s, calls_z_right(shell_radius)=%s" % (shell_position, shell_radius, test_output_fromPython, test_output_fromCPP) )
+
+        # TESTING pythonified CylinderScalingHelperTools
+        HT = CylinderScalingHelperTools(testShell.ScalingFunctions, direction)
+
+        test_z1_output_fromHT   = HT.test_z1_function(shell_radius)
+        test_z1_output_fromHere = z1_function(shell_radius)
+
+        test_r1_output_fromHT   = HT.test_r1_function(shell_radius)
+        test_r1_output_fromHere = r1_function(shell_radius)        
+
+        log.info("TESTING HT (z1): shell_radius=%s, HelperTools.test_z1_function(shell_radius)=%s, self.z1_function(shell_radius)=%s" % (shell_radius, test_z1_output_fromHT, test_z1_output_fromHere) )
+        log.info("TESTING HT (r1): shell_radius=%s, HelperTools.test_r1_function(shell_radius)=%s, self.r1_function(shell_radius)=%s" % (shell_radius, test_r1_output_fromHT, test_r1_output_fromHere) )
         
     # else -> use z_left
     else:

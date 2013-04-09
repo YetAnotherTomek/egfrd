@@ -38,6 +38,7 @@ void register_cylinder_scaling()
     class_<CylinderScalingHelperTools<WorldTraits>, boost::shared_ptr<CylinderScalingHelperTools<WorldTraits> >, boost::noncopyable >
         ("CylinderScalingHelperTools", init<CylinderScalingFunctionsWrap<WorldTraits>*, Real>() )
         .def("get_dr_dzright_dzleft_to_CylindricalShape", &CylinderScalingHelperTools<WorldTraits>::get_dr_dzright_dzleft_to_CylindricalShape)
+        .def("test_z1_function", &CylinderScalingHelperTools<WorldTraits>::test_z1_function)
         .def("test_r1_function", &CylinderScalingHelperTools<WorldTraits>::test_r1_function)
         ;
 
