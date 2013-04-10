@@ -878,7 +878,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         z1_function = testShell.z_right
         z2_function = testShell.z_left
         z1 = z_right
-        z2 = z_left
+        z2 = z_left        
 
         # TESTING pythonified CylinderScalingFunctions
         test_output_fromPython  = testShell.z_right(shell_radius)
@@ -911,6 +911,11 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     
     # This must always be the case:
     assert scale_angle >= 0.0
+
+    # Pack scaling info to reduce no. of passed arguments
+    scale_center_info = [scale_center_r, scale_center_z, 0.0]   # last vector component unused
+    scale_angle_info  = [scale_angle, tan_scale_angle, 0.0]     # last vector component unused
+    # TODO Pass on info to C++ here
 
     # Check how the cylinders are oriented with respect to each other
     relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))

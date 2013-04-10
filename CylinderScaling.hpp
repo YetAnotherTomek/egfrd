@@ -114,8 +114,7 @@ class CylinderScalingHelperTools
 {
  
   typedef typename Ttraits_::length_type      length_type;
-  typedef typename Ttraits_::length_type      position_type;
-  
+  typedef typename Ttraits_::position_type    position_type;  
   typedef int                                 direction_type;
   
   // define scaling helper function type to later define an array
@@ -126,8 +125,12 @@ class CylinderScalingHelperTools
   public:       // METHODS
     
     // constructor
-    CylinderScalingHelperTools(CylinderScalingFunctionsWrap<Ttraits_> *CSF_, Real scale_angle_) : 
-      CSF(CSF_), scale_angle(scale_angle_)
+    CylinderScalingHelperTools( CylinderScalingFunctionsWrap<Ttraits_> *CSF_, 
+                                position_type scale_center_info_, 
+                                position_type scale_angle_info_                 ):
+     CSF(CSF_), 
+     scale_center_info(scale_center_info_), 
+     scale_angle_info(scale_angle_info_)
     {
          // Assign the scaling functions to the array for the two different directions
          // direction = -1 (direction_index = 0)
@@ -139,7 +142,11 @@ class CylinderScalingHelperTools
          z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
          z2_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_left;
          
-         tan_scale_angle = std::tan(scale_angle);
+         // Unpack scaling_info         
+         scale_center_r  = scale_center_info[0];
+         scale_center_z  = scale_center_info[1];         
+         scale_angle     = scale_angle_info[0];
+         tan_scale_angle = scale_angle_info[1];
     };
     // destructor
     ~CylinderScalingHelperTools() {};        
@@ -199,9 +206,18 @@ class CylinderScalingHelperTools
                                          // has to start from zero, so we have to map direction=-1 to direction_index=0
     
     position_type       orientation_vector;
-    position_type       ref_to_shell_vector;    
+    position_type       ref_to_shell_vector;
+    length_type         scale_center_r;
+    length_type         scale_center_z;
     length_type         ref_to_shell_z;
     
+    position_type       scale_center_info; // scale_center_info is the scale center (r,z) coordinates;                                           
+                                           // This is to limit the no. of arguments.
+    position_type       scale_angle_info;  // first entry is scale_angle, second entry tan(scale_angle)
+                                           // tan(scale_angle) is calculated in Python already at shell 
+                                           // construction because tan() is quite expensive, so passing on 
+                                           // is better than recalculating.
+                                           
     Real                scale_angle;
     Real                tan_scale_angle;
     
