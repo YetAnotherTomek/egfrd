@@ -174,7 +174,11 @@ class CylinderScalingHelperTools
          otherShell_r  = otherShell_dimensions[0]; // radius
          otherShell_hl = otherShell_dimensions[1]; // half-length
          
+         ref_to_shell_vec = subtract(otherShell_position_t, testShell_reference_point);
+         ref_to_shell_z   = dot_product(ref_to_shell_vec, testShell_orientation_vector);
+         
     };
+    
     // destructor
     ~CylinderScalingHelperTools() {};        
 
@@ -214,7 +218,7 @@ class CylinderScalingHelperTools
     };
     
     inline static position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape()
-    {
+    {            
     };
     
     // Wrappers for cylinder scaling functions passed as member functions of CSF
@@ -268,7 +272,7 @@ class CylinderScalingHelperTools
     scaling_function_pt_type z2_function[2];
     
     // Important vectors and lengths used throughout the calculations
-    position_type       ref_to_shell_vector;
+    position_type       ref_to_shell_vec;
     length_type         ref_to_shell_z;
 
 };
