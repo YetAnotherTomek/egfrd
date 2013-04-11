@@ -915,7 +915,16 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     # Pack scaling info to reduce no. of passed arguments
     scale_center_info = [scale_center_r, scale_center_z, 0.0]   # last vector component unused
     scale_angle_info  = [scale_angle, tan_scale_angle, 0.0]     # last vector component unused
-    # TODO Pass on info to C++ here
+    testShell_dimensions  = [r, z1, z2]
+    testShell_reference_point     = reference_point
+    testShell_orientation_vector  = orientation_vector
+    otherShell_position_t         = shell_position_t
+    otherShell_orientation_vector = shape.unit_z
+    otherShell_dimensions = [shell_radius, shell_half_length, shell_half_length] # last vector component unused
+    # TODO Pass on info to C++ here:
+    #   testShell_reference_point, testShell_orientation_vector, testShell_dimensions,
+    #   otherShell_position_t, otherShell_orientation_vector, otherShell_dimensions,
+    #   direction, scale_center_info, scale_angle_info
 
     # Check how the cylinders are oriented with respect to each other
     relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))

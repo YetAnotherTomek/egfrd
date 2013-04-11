@@ -126,9 +126,23 @@ class CylinderScalingHelperTools
     
     // constructor
     CylinderScalingHelperTools( CylinderScalingFunctionsWrap<Ttraits_> *CSF_, 
-                                position_type scale_center_info_, 
-                                position_type scale_angle_info_                 ):
-     CSF(CSF_), 
+                                position_type  testShell_reference_point_,
+                                position_type  testShell_orientation_vector_,
+                                position_type  testShell_dimensions_,
+                                position_type  otherShell_position_t_,
+                                position_type  otherShell_orientation_vector_,
+                                position_type  otherShell_dimensions_,
+                                direction_type direction_,
+                                position_type  scale_center_info_, 
+                                position_type  scale_angle_info_                 ):
+     CSF(CSF_),
+     testShell_reference_point(testShell_reference_point_),
+     testShell_orientation_vector(testShell_orientation_vector_),
+     testShell_dimensions(testShell_dimensions_),
+     otherShell_position_t(otherShell_position_t_),
+     otherShell_orientation_vector(otherShell_orientation_vector_),
+     otherShell_dimensions(otherShell_dimensions_),
+     direction(direction_),
      scale_center_info(scale_center_info_), 
      scale_angle_info(scale_angle_info_)
     {
@@ -142,11 +156,24 @@ class CylinderScalingHelperTools
          z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
          z2_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_left;
          
+         // Set direction index for addressing the above arrays
+         direction_index = (direction == 1) ? 1 : 0;
+         
          // Unpack scaling_info         
          scale_center_r  = scale_center_info[0];
          scale_center_z  = scale_center_info[1];         
          scale_angle     = scale_angle_info[0];
          tan_scale_angle = scale_angle_info[1];
+         
+         // Unpack shell dimensions
+         // for testShell
+         r  = testShell_dimensions[0];
+         z1 = testShell_dimensions[1];
+         z2 = testShell_dimensions[2];
+         // for otherShell
+         otherShell_r  = otherShell_dimensions[0]; // radius
+         otherShell_hl = otherShell_dimensions[1]; // half-length
+         
     };
     // destructor
     ~CylinderScalingHelperTools() {};        
@@ -179,6 +206,7 @@ class CylinderScalingHelperTools
 
     inline static void determine_direction_and_coordinate_system()
     {
+        // For now this is still done in Python
     };
     
     inline static position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape()
@@ -199,35 +227,58 @@ class CylinderScalingHelperTools
     
   public:       // PROPERTIES
     
-    CylinderScalingFunctionsWrap<Ttraits_> *CSF;
+    CylinderScalingFunctionsWrap<Ttraits_> *CSF;        
     
+    // We pack some of the info into position vectors. This is to limit the no. of arguments.
+    position_type       testShell_reference_point;
+    position_type       testShell_orientation_vector;
+    position_type       testShell_dimensions;   // first entry radius r, second z1, third z2
+    position_type       otherShell_position_t;
+    position_type       otherShell_orientation_vector;
+    position_type       otherShell_dimensions;  // 1st entry radius r, 2nd half_length, 3rd unused
+    position_type       scale_center_info;      // 1st entry r-coord. of the scale center, 2nd z-coord.
+    position_type       scale_angle_info;       // 1st entry scale_angle, 2nd entry tan(scale_angle), 3rd unused;
+                                                // tan(scale_angle) is calculated in Python already at shell 
+                                                // construction because tan() is quite expensive, so passing on 
+                                                // is better than recalculating.
+    // testShell dimensions
+    length_type         r;  // radius
+    length_type         z1; // the height that is scaled
+    length_type         z2; // the height on the opposite side of the shell (unscaled)
+    // otherShell dimensions
+    length_type         otherShell_r;   // radius
+    length_type         otherShell_hl;  // half-length
+    
+    // Scaling info follows
     direction_type      direction;
     int                 direction_index; // to address the methods in the scaling function pointer arrays
                                          // has to start from zero, so we have to map direction=-1 to direction_index=0
-    
-    position_type       orientation_vector;
-    position_type       ref_to_shell_vector;
+                                         
+    // Scale center
     length_type         scale_center_r;
-    length_type         scale_center_z;
-    length_type         ref_to_shell_z;
-    
-    position_type       scale_center_info; // scale_center_info is the scale center (r,z) coordinates;                                           
-                                           // This is to limit the no. of arguments.
-    position_type       scale_angle_info;  // first entry is scale_angle, second entry tan(scale_angle)
-                                           // tan(scale_angle) is calculated in Python already at shell 
-                                           // construction because tan() is quite expensive, so passing on 
-                                           // is better than recalculating.
-                                           
+    length_type         scale_center_z;                                               
+    // Scale angle
     Real                scale_angle;
     Real                tan_scale_angle;
     
-    // array of scaling methods - we have to call different ones depending on the direction
-    // determined initially
+    // Array of scaling methods - we have to call different ones depending on the 
+    // scale direction determined initially
     scaling_function_pt_type r1_function[2];
     scaling_function_pt_type z1_function[2];
     scaling_function_pt_type z2_function[2];
+    
+    // Important vectors and lengths used throughout the calculations
+    position_type       ref_to_shell_vector;
+    length_type         ref_to_shell_z;
 
 };
+
+
+
+
+
+
+
 
 
 
