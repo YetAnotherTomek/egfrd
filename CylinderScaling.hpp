@@ -224,12 +224,12 @@ class CylinderScalingHelperTools
     
   private:          // helper methods
 
-    inline static void determine_direction_and_coordinate_system()
+    inline void determine_direction_and_coordinate_system()
     {
         // For now this is still done in Python
     };
     
-    inline static position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape()
+    inline position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape()
     {
     };
     
@@ -263,14 +263,14 @@ class CylinderScalingHelperTools
 
         if(to_edge_angle <= scale_angle)
         {   // shell hits the scaling cylinder on top
-            z1_new = min(z1, (ref_to_shell_z - otherShell_hl) );
-            r_new  = min(r,  r1_function[di](z1_new) );
+            z1_new = std::min(z1, (ref_to_shell_z - otherShell_hl) );
+            r_new  = std::min(r,  (this->*r1_function[this->di])(z1_new) );
                      // TODO if z1 hasn't changed we also don't have to recalculate this
         }
         else
         {   // shell hits the scaling cylinder on the radial side
-            r_new  = min(r, (ref_to_shell_r - otherShell_radius) );
-            z1_new = min(z1, z1_function[di](r_new) );
+            r_new  = std::min(r, (ref_to_shell_r - otherShell_radius) );
+            z1_new = std::min(z1, (this->*z1_function[this->di])(r_new) );
         }
         
         return create_vector<position_type>(r_new, z1_new, z2_new);
