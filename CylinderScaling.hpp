@@ -28,6 +28,7 @@
 #include "findRoot.hpp"
 #include "funcSum.hpp"
 #include "geometry.hpp"
+#include "exceptions.hpp"
 
 #include "Logger.hpp"
 
@@ -183,11 +184,25 @@ class CylinderScalingHelperTools
     // destructor
     ~CylinderScalingHelperTools() {};        
 
-    
-    // master method that calls downstream helper methods in the right order
-    inline static position_type get_dr_dzright_dzleft_to_CylindricalShape()
+        
+    inline position_type get_dr_dzright_dzleft_to_CylindricalShape()
     {
-        return position_type(); // bogus object
+        // The master method that calls downstream helper methods in the right order
+        // It returns the new testShell dimensions after scaling against otherShell,
+        // after first determining whether the two shells are oriented in parallel 
+        // or orthogonally
+        
+        length_type relative_orientation( dot_product(testShell_orientation_vector, otherShell_orientation_vector) );
+        
+        if( feq(relative_orientation, 1.0, 1e-3 ) )
+          return get_dr_dzright_dzleft_to_parallel_CylindricalShape();
+        
+        else if( feq(relative_orientation, 0.0, 1e-3 ) )
+          return get_dr_dzright_dzleft_to_orthogonal_CylindricalShape();
+        
+        else
+          throw unsupported("Shells are neither parallel nor orthogonal in CylindricaltestShell scaling routine.");
+        
     };
     
     // methods for TESTING whether scaling functions passed to this class
