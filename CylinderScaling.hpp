@@ -113,9 +113,10 @@ template <typename Ttraits_>
 class CylinderScalingHelperTools
 {
  
-  typedef typename Ttraits_::length_type      length_type;
+  typedef typename Ttraits_::length_type      length_type;  
   typedef typename Ttraits_::position_type    position_type;  
   typedef int                                 direction_type;
+  typedef Real                                angle_type; // TODO could be improved
   
   // define scaling helper function type to later define an array
   // of scaling functions with direction_type index
@@ -147,17 +148,17 @@ class CylinderScalingHelperTools
      scale_angle_info(scale_angle_info_)
     {
          // Assign the scaling functions to the array for the two different directions
-         // direction = -1 (direction_index = 0)
+         // direction = -1 (di = 0)
          r1_function[0] = &CylinderScalingHelperTools<Ttraits_>::r_left;
          z1_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_left;
          z2_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_right;
-         // direction = +1 (direction_index = 1)
+         // direction = +1 (di = 1)
          r1_function[1] = &CylinderScalingHelperTools<Ttraits_>::r_right;
          z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
          z2_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_left;
          
          // Set direction index for addressing the above arrays
-         direction_index = (direction == 1) ? 1 : 0;
+         di = (direction == 1) ? 1 : 0;
          
          // Unpack scaling_info         
          scale_center_r  = scale_center_info[0];
@@ -171,8 +172,8 @@ class CylinderScalingHelperTools
          z1 = testShell_dimensions[1];
          z2 = testShell_dimensions[2];
          // for otherShell
-         otherShell_r  = otherShell_dimensions[0]; // radius
-         otherShell_hl = otherShell_dimensions[1]; // half-length
+         otherShell_radius = otherShell_dimensions[0];
+         otherShell_hl     = otherShell_dimensions[1]; // half-length
          
          ref_to_shell_vec = subtract(otherShell_position_t, testShell_reference_point);
          ref_to_shell_z   = dot_product(ref_to_shell_vec, testShell_orientation_vector);
@@ -193,16 +194,16 @@ class CylinderScalingHelperTools
     // via CylinderScalingFunctionsWrap class are correctly invoked from Python
     length_type test_r1_function(length_type z)  // TESTING
     {
-        this->direction_index = int(scale_angle == 1.0 ? 1 : 0);
+        this->di = int(scale_angle == 1.0 ? 1 : 0);
         
-        return (this->*r1_function[this->direction_index])(z);
+        return (this->*r1_function[this->di])(z);
     };
     
     length_type test_z1_function(length_type r)  // TESTING
     {
-        this->direction_index = int(scale_angle == 1.0 ? 1 : 0);
+        this->di = int(scale_angle == 1.0 ? 1 : 0);
         
-        return (this->*z1_function[this->direction_index])(r);
+        return (this->*z1_function[this->di])(r);
     };
     
     
@@ -217,8 +218,47 @@ class CylinderScalingHelperTools
     {
     };
     
-    inline static position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape()
-    {            
+    inline position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape()
+    {
+        // Calculates the new testShell dimensions when scaled with respect
+        // to another shell that is parallel in orientation
+        
+        length_type r_new(r), z1_new(z1), z2_new(z2);
+        
+        // calculate ref_to_shell_r/z in the cylindrical coordinate system on the right/left side
+        position_type ref_to_shell_z_vec( multiply(testShell_orientation_vector, ref_to_shell_z) );
+        position_type ref_to_shell_r_vec( subtract(ref_to_shell_vec, ref_to_shell_z_vec) );
+        length_type   ref_to_shell_r( length(ref_to_shell_r_vec) );     // the radius is always positive
+        length_type   ref_to_shell_z( ref_to_shell_z * direction );     // ref_to_shell_z is positive 
+                                                                        // on the scaling side (right/left)
+
+        // calculate the distances in r/z from the scaling center to the shell
+        length_type scale_center_to_shell_r( ref_to_shell_r - scale_center_r );
+        length_type scale_center_to_shell_z( ref_to_shell_z - scale_center_z );
+
+        // get angles
+        angle_type to_edge_angle( std::atan( (scale_center_to_shell_r - otherShell_radius) / 
+                                                 (scale_center_to_shell_z - otherShell_hl)
+                                           ) );
+
+        if(scale_center_to_shell_z - otherShell_hl < 0.0 )
+            to_edge_angle += M_PI;      // if the shell was too much to the side we correct the angle to be positive
+        // elif: a negative angle was caused by a negative scale_center_to_shell we want a negative angle -> do nothing
+        // otherwise: shell_angle is ok -> do nothing
+
+        if(to_edge_angle <= scale_angle)
+        {   // shell hits the scaling cylinder on top
+            z1_new = min(z1, (ref_to_shell_z - otherShell_hl) );
+            r_new  = min(r,  r1_function[di](z1_new) );
+                     // TODO if z1 hasn't changed we also don't have to recalculate this
+        }
+        else
+        {   // shell hits the scaling cylinder on the radial side
+            r_new  = min(r, (ref_to_shell_r - otherShell_radius) );
+            z1_new = min(z1, z1_function[di](r_new) );
+        }
+        
+        return create_vector<position_type>(r_new, z1_new, z2_new);
     };
     
     // Wrappers for cylinder scaling functions passed as member functions of CSF
@@ -250,19 +290,19 @@ class CylinderScalingHelperTools
     length_type         z1; // the height that is scaled
     length_type         z2; // the height on the opposite side of the shell (unscaled)
     // otherShell dimensions
-    length_type         otherShell_r;   // radius
+    length_type         otherShell_radius;
     length_type         otherShell_hl;  // half-length
     
     // Scaling info follows
     direction_type      direction;
-    int                 direction_index; // to address the methods in the scaling function pointer arrays
-                                         // has to start from zero, so we have to map direction=-1 to direction_index=0
+    int                 di; // to address the methods in the scaling function pointer arrays
+                            // has to start from zero, so we have to map direction=-1 to di=0
                                          
     // Scale center
     length_type         scale_center_r;
     length_type         scale_center_z;                                               
     // Scale angle
-    Real                scale_angle;
+    angle_type          scale_angle;
     Real                tan_scale_angle;
     
     // Array of scaling methods - we have to call different ones depending on the 
