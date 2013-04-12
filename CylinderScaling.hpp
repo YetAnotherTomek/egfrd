@@ -8,13 +8,13 @@
 #include <vector>
 
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_roots.h>
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_sum.h>
-#include <gsl/gsl_errno.h>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_sf_expint.h>
 #include <gsl/gsl_sf_elljac.h>
-#include <gsl/gsl_roots.h>
 
 #include <math.h>
 //#include <Python.h>
@@ -177,7 +177,9 @@ class CylinderScalingHelperTools
         // For now this is still done in Python
     };
     
-    // Collision of orthogonal cylinders
+    /*************************************/
+    /* Collision of orthogonal cylinders */
+    /*************************************/
     inline position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape()
     {
         construct_local_coordinate_system();
@@ -185,7 +187,9 @@ class CylinderScalingHelperTools
         return get_dr_dzright_dzleft_for_specific_collision( determine_collision_type() );
     };
     
-    // Helper method to construct the local coordinate system for orthogonal scaling
+    /*********************************************************************************/
+    /* Helper method to construct the local coordinate system for orthogonal scaling */
+    /*********************************************************************************/
     inline void construct_local_coordinate_system()
     {
         // First define local_x depending on how the otherShell is oriented
@@ -229,7 +233,9 @@ class CylinderScalingHelperTools
         
     };
     
-    // Helper method to determine how precisely the testShell hits the otherShell
+    /******************************************************************************/
+    /* Helper method to determine how precisely the testShell hits the otherShell */
+    /******************************************************************************/
     inline collision_type determine_collision_type()
     {
             
@@ -267,7 +273,7 @@ class CylinderScalingHelperTools
             {                
                 if( std::sqrt( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length
                                + scale_center_to_shell_y*scale_center_to_shell_y) < r )
-                // The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
+                // The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder ('testShell').
                 // Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
                     collision_situation = FLAT_HITS_BARREL;
                     
@@ -350,7 +356,7 @@ class CylinderScalingHelperTools
             if(scale_angle == 0.0)
             {
                 if(scale_center_to_shell_y < r)
-                // The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
+                // The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder ('testShell').
                 // Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
                     collision_situation = FLAT_HITS_BARREL;
 
@@ -493,12 +499,452 @@ class CylinderScalingHelperTools
       
     };
     
-    // Helper method that calculates the new lengths for the specific collision determined above
-    inline position_type get_dr_dzright_dzleft_for_specific_collision(collision_type collision)
+    /*********************************************************************************************/
+    /* Helper method that calculates the new lengths for the specific collision determined above */
+    /*********************************************************************************************/
+    // This function partly uses a rootfinder method to determine the new test shell dimensions
+    // (in particular in the case in which the two orthogonal cylinder's edges hit each other).
+    // The associated helper scaling functions and a common parameter holder are defined first here:
+    
+    // (a) Parameter holder structure
+    struct edge_hits_edge_eq_params
     {
+        Real         tan_scale_angle;
+        length_type  scale_center_to_shell_edge_x, scale_center_to_shell_y, scale_center_to_shell_z;
+        length_type  otherShell_radius_sq;
     };
     
-    // Collision of parallel cylinders
+    // (b) Helper function to find h1 as a function of r1 in edge_hits_edge scaling
+    length_type edge_hits_edge_h1_eq(length_type x, void *params)
+    {
+      // Cast parameters into the right form
+      struct edge_hits_edge_eq_params *p = (struct edge_hits_edge_eq_params *) params;
+      // Unpack parameters
+      Real         tan_scale_angle  = p->tan_scale_angle;
+      length_type  scale_center_to_shell_edge_x = p->scale_center_to_shell_edge_x;
+      length_type  scale_center_to_shell_y = p->scale_center_to_shell_y;
+      length_type  scale_center_to_shell_z = p->scale_center_to_shell_z;
+      length_type  otherShell_radius_sq = p->otherShell_radius_sq;
+    
+      // We will take the square root of the following below
+      length_type sqrt_arg( (x*tan_scale_angle)*(x*tan_scale_angle) - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
+
+      if(sqrt_arg < 0.0 && std::abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
+
+              sqrt_arg = 0.0;     // This safety check is to prevent math domain errors
+                                  // in case sqrt_arg is close to zero and taking the
+                                  // difference results in very small negative numbers
+              // log.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.")
+              // FIXME Fix logging first!
+                        
+      return (scale_center_to_shell_z - x)*(scale_center_to_shell_z - x) - otherShell_radius_sq 
+             + (scale_center_to_shell_y - std::sqrt( sqrt_arg ))*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
+    };
+    
+    // (c) Helper function to find r1 as a function of h1 in edge_hits_edge scaling
+    // Very similar, but in a crucial part different from edge_hits_edge_h1_eq() defined above
+    length_type edge_hits_edge_r1_eq(length_type x, void *params)
+    {   
+        // Cast parameters into the right form
+        struct edge_hits_edge_eq_params *p = (struct edge_hits_edge_eq_params *) params;
+        // Unpack parameters
+        Real         tan_scale_angle  = p->tan_scale_angle;
+        length_type  scale_center_to_shell_edge_x = p->scale_center_to_shell_edge_x;
+        length_type  scale_center_to_shell_y = p->scale_center_to_shell_y;
+        length_type  scale_center_to_shell_z = p->scale_center_to_shell_z;
+        length_type  otherShell_radius_sq = p->otherShell_radius_sq;
+      
+        // We will take the square root of the following below
+        length_type sqrt_arg( x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
+              
+        if(sqrt_arg < 0.0 && std::abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
+
+              sqrt_arg = 0.0;     // This safety check is to prevent math domain errors
+                                  // in case sqrt_arg is close to zero and taking the
+                                  // difference results in very small negative numbers
+              // log.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.")
+              // FIXME Fix logging first!
+
+        return (scale_center_to_shell_z - x/tan_scale_angle)*(scale_center_to_shell_z - x/tan_scale_angle) - otherShell_radius_sq
+               + (scale_center_to_shell_y - std::sqrt( sqrt_arg ) )*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
+    };
+               
+    // (d) Now the function that handles the scaling for each collision situation specifically
+    inline position_type get_dr_dzright_dzleft_for_specific_collision(collision_type collision_situation)
+    {
+      
+      // The return lengths
+      length_type r_new, z1_new, z2_new;
+      
+      // Some commonly used values
+      length_type otherShell_radius_sq( otherShell_radius*otherShell_radius );
+      
+      switch(collision_situation)
+      {
+            
+          case BARREL_HITS_FLAT:
+          { 
+              // the scaling cylinder ('testShell') hits the flat side of 'otherShell' with its barrel side
+              r_new  = std::min(r, (ref_to_shell_x - otherShell_hl));
+              z1_new = std::min(z1, (this->*z1_function[di])(r_new));
+          }
+          break;
+          
+          case EDGE_HITS_EDGE:
+          {      
+              // the scaling cylinder ('testShell') hits the edge of 'otherShell' with its edge
+              // TODO we have a solution but it can only be found with a root finder -> slow
+              
+              // We need the distances to the edge of otherShell in the following:
+              length_type scale_center_to_shell_edge_x( scale_center_to_shell_x - otherShell_hl );
+              length_type scale_center_to_shell_edge_y( scale_center_to_shell_y - otherShell_radius );
+              length_type scale_center_to_shell_edge_z( scale_center_to_shell_z - otherShell_radius );
+              // TODO Also pre-calculate the squares
+
+              if(scale_angle == 0.0)
+              {
+                  // scale_angle = 0 means that the radius r will stay constant at scaling
+                  // Therefore, if the projected edge of the static shell lies outside of the 
+                  // circle defined by r there will be no collision. We check for that:
+                  if(r < std::sqrt( scale_center_to_shell_edge_x*scale_center_to_shell_edge_x +
+                                    scale_center_to_shell_edge_y*scale_center_to_shell_edge_y   ))
+                  {
+                      // The height and radius of the scaled cylinder remain unaltered
+                      r_new = r;
+                      z1_new = z1;        // Note that z1_function would give infinity,
+                                          // but we would take the min(z1_function(r_new), z1)
+                  }
+                  else
+                  {
+                      // There is a collision possible when z1 is scaled                    
+                      length_type y1_collide( std::sqrt(r*r - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x) );
+                      length_type y2_collide( scale_center_to_shell_y - y1_collide );
+                      length_type h_collide(  std::sqrt(otherShell_radius_sq - y2_collide*y2_collide) );
+
+                      length_type h_touch( scale_center_to_shell_z - h_collide );
+                      z1_new = std::min(z1, h_touch);
+                      r_new  = std::min(r,  (this->*r1_function[di])(z1_new));
+                  }
+              }
+              else
+              {
+                  // TESTING Code snippet to check whether rootfinder run is necessary
+                  // We only want to run it if the radius increase at intersection of the cylinder edges is "significant".
+                  // This is sub-optimal but it avoids rootfinder errors caused by the fact that the radius search interval
+                  // becomes to small, which is equivalent to the potential r-increase becoming small.
+                  //
+                  // We define the increase as "significant" by comparing the potential radius increase with the radial (xy-) distance
+                  // from the scale center to the static shell; if increase / distance >= 10% the gain is "significant".
+                  // adial_distance = math.sqrt( scale_center_to_shell_x**2 + scale_center_to_shell_y**2 )
+                  // potential_r_increase = math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2 ) - scale_center_to_shell_edge_x  
+                  // assert radial_distance >= potential_r_increase and potential_r_increase >= 0
+                  /*
+                      bool run_rootfinder( true );
+                      if( potential_r_increase / radial_distance >= 0.10 )
+                          run_rootfinder = true;
+                      else
+                      {
+                          run_rootfinder = false;
+              
+                          length_type r_touch( scale_center_to_shell_edge_y );
+                          if(scale_center_to_shell_x < scale_center_to_shell_y)
+                                  r_touch = scale_center_to_shell_edge_y;                    
+                          
+                          r_new  = std::min(r, r_touch);
+                          z1_new = std::min(z1, (this->*z1_function[di])(r_new) );
+                      }
+
+                      //if(run_rootfinder) ...
+                  */
+
+                  if(scale_angle <= M_PI/4.0)
+                  {                    
+                   
+                    // In this case there is no analytical solution, we have to use a rootfinder.
+                    // To this purpuse we make use of the GSL Brent rootfinder.                                        
+
+                    // Construct a rootfinder instance based on the function defined above
+                    int status;
+                    int iter = 0, max_iter = 100;
+                    const gsl_root_fsolver_type *solver;
+                    gsl_root_fsolver *solver_pt;
+                    double r = 0, r_expected = sqrt(5.0); // ?
+                    gsl_function F;                    
+                    struct edge_hits_edge_eq_params p = { tan_scale_angle, 
+                                                          scale_center_to_shell_edge_x, 
+                                                          scale_center_to_shell_y, 
+                                                          scale_center_to_shell_z,
+                                                          otherShell_radius_sq
+                                                        };
+                                                        
+                    // Pack function and parameters into the format required by GSL
+                    F.function = (double (*)(double, void*))(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq); // FIXME Is this cast working properly?
+                    F.params = &p;
+                    // Set the iteration bounds
+                    length_type h1_interval_min( (this->*z1_function[di])(scale_center_to_shell_edge_x) - scale_center_z );
+                    length_type h1_interval_max( (this->*z1_function[di])( std::sqrt( scale_center_to_shell_y*scale_center_to_shell_y 
+                                                        + scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) ) - scale_center_z );
+                                                        
+                    // Create a rootfinder instance with pointer
+                    solver    = gsl_root_fsolver_brent;
+                    solver_pt = gsl_root_fsolver_alloc(solver);
+                    // Initialize
+                    gsl_root_fsolver_set(solver_pt, &F, h1_interval_min, h1_interval_max);
+                    
+                    // TODO WIP: Continue with the actual rootfinder iteration
+
+
+                  // TODO TODO TODO - Maybe we don't need that iterative interval adaptation magic any more with the GSL rootfinder
+                  /* 
+                      // To ensure that we always search on an interval within which h1_eq() contains only one zero root
+                      // we enlarge the rootfinder interval, starting from safe bounds, towards the bounds beyond which we
+                      // know there are unwanted solutions. We stop the enlargement when function h1_eq() certainly 
+                      // changes sign within the interval.
+                      // We use a multiplicative factor tau to enlarge the domain. tau is set such that 
+                      // (1-tau)*h1_interval_max - (1+tau)*h1_interval_min >= 0.5*(h1_interval_max-h1_interval_min)
+                      // in order to ensure that the interval is nonzero and positive in the first iteration.
+
+                      // Set some repeating and default values
+                      // r1_interval min, r1_interval_max are the outer interval bounds for which there is only one root
+                      h1_interval_min = (this->*z1_function[di])(scale_center_to_shell_edge_x) - scale_center_z
+                      h1_interval_max = (this->*z1_function[di])( math.sqrt( scale_center_to_shell_y*scale_center_to_shell_y + \
+                                                        scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) ) - scale_center_z
+                      h1_interval_start = h1_interval_min
+                      h1_interval_end   = h1_interval_max
+                      // Set the enlargement factor; we want it to be at least as small as TOLERANCE
+                      tau = min(TOLERANCE, 0.5*(h1_interval_max-h1_interval_min)/(h1_interval_max+h1_interval_min))
+                      assert tau>0.0 and tau<1.0
+
+                      // Start the iteration
+                      n=1
+                      nmax=100
+                        // Since tau is very small, the iteration hardly ever should get to nmax; but to be safe...
+                      h1_eq_product = 1                    
+                      while h1_eq_product > 0.0:
+
+                          h1_interval_start = (1.0+tau**n) * h1_interval_min
+                          h1_interval_end   = (1.0-tau**n) * h1_interval_max
+                          h1_eq_product     = h1_eq(h1_interval_start) * h1_eq(h1_interval_end)
+
+                          n = n+1
+
+                          if n>nmax:
+                              raise testShellError('get_dr_dzright_dzleft_to_CylindricalShape: Could not find suitable rootfinder boundaries in EDGE_HITS_EDGE cylinder scaling. nmax=%s' % str(nmax) )
+
+                      assert(h1_interval_start >= 0)
+                      assert(h1_interval_end   >= h1_interval_end)
+
+                      // TODO TESTING REMOVE THIS WHEN DONE
+                      // log.debug( "***** NEW ROOTFINDER ITERATION *****" )
+                      // log.debug( "  Dy-r2 = %s" % (scale_center_to_shell_y-otherShell_radius) )
+                      // log.debug( "  Dx-h2 = %s" % scale_center_to_shell_edge_x )
+                      // log.debug( "  h1_interval_start = %s" % h1_interval_start )
+                      // log.debug( "  h1_interval_end = %s"   % h1_interval_end )
+                      // log.debug( "  h1(i_start) = %s"       % h1_eq(h1_interval_start) )
+                      // log.debug( "  h1(i_end) = %s"         % h1_eq(h1_interval_end) )
+
+                      // Finally, start the rootfinding
+                      h_touch = scale_center_z + findroot(h1_eq, h1_interval_start, h1_interval_end)
+                      z1_new = std::min(z1, h_touch)
+                      r_new  = std::min(r,  (this->*r1_function[di])(z1_new))
+                      
+                  */ // TODO TODO TODO
+                  
+                  }
+                  else // if scale_angle > M_PI/4.0
+                  {
+                    /* // TODO TODO TODO
+                    
+                      // This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
+                      // instead of h1; notice that scale_angle > 0 here, so we can divide by it
+                      def r1_eq(x):
+
+                          // We will take the square root of the following below
+                          sqrt_arg = x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x
+
+                          if sqrt_arg < 0.0 and abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x:
+
+                              sqrt_arg = 0.0      // This safety check is to prevent math domain errors
+                                                  // in case sqrt_arg is close to zero and taking the
+                                                  // difference results in very small negative numbers
+                              log.warn('Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.')
+
+                          eq_value = (scale_center_to_shell_z - x/tan_scale_angle)*(scale_center_to_shell_z - x/tan_scale_angle) - otherShell_radius_sq +\
+                                        (scale_center_to_shell_y - math.sqrt( sqrt_arg ) )*(scale_center_to_shell_y - math.sqrt( sqrt_arg ) )
+
+                          // TODO TESTING REMOVE THIS WHEN DONE
+                          // log.debug( "***** ROOTFINDER CALL: Calling r1_eq() with: *****" )
+                          // log.debug( "  r1 = %s, value = %s" % (x, eq_value ) )
+                          // log.debug( "  h1 = %s" % ((this->*z1_function[di])(x)) )
+
+                          return eq_value
+
+                      // To ensure that we always search on an interval within which r1_eq() contains only one zero root
+                      // we enlarge the rootfinder interval, starting from safe bounds, towards the bounds beyond which we
+                      // know there are unwanted solutions. We stop the enlargement when function r1_eq() certainly 
+                      // changes sign within the interval.
+                      // We use a multiplicative factor tau to enlarge the domain. tau is set such that 
+                      // (1-tau)*r1_interval_max - (1+tau)*r1_interval_min >= 0.5*(r1_interval_max-r1_interval_min)
+                      // in order to ensure that the interval is nonzero and positive in the first iteration.
+
+                      // Set some repeating and default values
+                      // r1_interval min, r1_interval_max are the outer interval bounds for which there is only one root
+                      r1_interval_min = scale_center_to_shell_edge_x
+                      r1_interval_max = math.sqrt( scale_center_to_shell_y*scale_center_to_shell_y + \
+                                                      scale_center_to_shell_edge_x*scale_center_to_shell_edge_x )
+                      r1_interval_start = r1_interval_min
+                      r1_interval_end   = r1_interval_max
+                      // Set the enlargement factor; we want it to be at least as small as TOLERANCE
+                      tau = min(TOLERANCE, 0.5*(r1_interval_max-r1_interval_min)/(r1_interval_max+r1_interval_min))
+                      assert tau>0.0 and tau<1.0
+
+                      // Start the iteration
+                      n=1
+                      nmax=100
+                        // Since tau is very small, the iteration hardly ever should get to nmax; but to be safe...
+                      r1_eq_product = 1
+                      while r1_eq_product > 0.0:
+
+                          r1_interval_start = (1.0+tau**n) * r1_interval_min
+                          r1_interval_end   = (1.0-tau**n) * r1_interval_max
+                          r1_eq_product     = r1_eq(r1_interval_start) * r1_eq(r1_interval_end)
+                          
+                          n = n+1
+
+                          if n>nmax:
+                              raise testShellError('get_dr_dzright_dzleft_to_CylindricalShape: Could not find suitable rootfinder boundaries in EDGE_HITS_EDGE cylinder scaling. nmax=%s' % str(nmax) )
+
+                      // Non-adaptive version; TODO Remove this after TESTING
+                      // r1_interval_start = scale_center_to_shell_edge_x
+                      // r1_interval_end   = math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2 )
+                      assert(r1_interval_start >= 0), 'r1_interval_start = %s, n_iterations=%s' % (r1_interval_start, n)
+                      assert(r1_interval_end   >= r1_interval_start), 'r1_interval_start = %s, r1_interval_end=%s, n_iterations=%s' % (r1_interval_start, r1_interval_end, n)
+
+                      // TODO TESTING REMOVE THIS WHEN DONE
+                      // print "***** NEW ROOTFINDER ITERATION *****"
+                      // print "  Dy-r2 = %s" % (scale_center_to_shell_y-otherShell_radius)
+                      // print "  Dx-h2 = %s" % scale_center_to_shell_edge_x
+                      // print "  r1_interval_start = %s" % r1_interval_start
+                      // print "  r1_interval_end = %s"   % r1_interval_end
+                      // print "  r1(i_start) = %s"       % r1_eq(scale_center_to_shell_edge_x)
+                      // print "  r1(i_end) = %s"         % r1_eq(math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2))
+
+                      // Finally, start the rootfinding
+                      r_touch = findroot(r1_eq, r1_interval_start, r1_interval_end)
+                                
+                      r_new  = min(r, r_touch)
+                      z1_new = min(z1, (this->*z1_function[di])(r_new))
+                  */ // TODO TODO TODO
+                      r_new  = r;
+                      z1_new = std::min(z1, (this->*z1_function[di])(r_new));                
+                  }
+                  
+              }; // if scale_angle <> 0.0
+              
+          }
+          break;
+          
+          case BARREL_HITS_EDGE:
+          {   
+              // the scaling cylinder ('testShell') hits the edge of 'otherShell' with its barrel side
+              r_new = std::min(r, std::sqrt( (ref_to_shell_x-otherShell_hl)*(ref_to_shell_x-otherShell_hl) \
+                                              + (ref_to_shell_y - otherShell_radius)*(ref_to_shell_y - otherShell_radius) ));
+              z1_new = std::min(z1, (this->*z1_function[di])(r_new));                  
+          }
+          break;
+
+          case FLAT_HITS_BARREL:
+          {   
+              // the scaling cylinder ('testShell') hits the barrel of 'otherShell' with its top flat side
+              z1_new = std::min(z1, (ref_to_shell_z - otherShell_radius));
+              r_new  = std::min(r,  (this->*r1_function[di])(z1_new));
+          }     
+          break;
+
+          case EDGE_HITS_BARREL:
+          {
+              // the scaling cylinder ('testShell') hits the barrel of 'otherShell' with its edge
+              
+              // If scale_angle == 0, the scale center is offset from the reference point,
+              // located at the barrel of the scaled cylinder. In order for the below calculation
+              // to succeed we have to take this into account. In general scale_center_r == 0
+              // so that this step only affects the scale_angle == 0 cases:
+              scale_center_to_shell_y -= scale_center_r;
+
+              // Pre-calculate some lengths...
+              length_type ss_sq( scale_center_to_shell_z*scale_center_to_shell_z + scale_center_to_shell_y*scale_center_to_shell_y );
+              length_type scale_center_to_shell( std::sqrt(ss_sq) );
+              // ...and angles used below
+              angle_type shell_angle_yz( std::atan(scale_center_to_shell_y/scale_center_to_shell_z) );
+              angle_type angle_diff( std::abs(shell_angle_yz - scale_angle) );
+              Real sin_angle_diff( std::sin(angle_diff) );
+              Real cos_angle_diff( std::cos(angle_diff) ); // TODO fix typing
+              
+              assert( scale_center_to_shell >= otherShell_radius );// should never fail
+
+              angle_type ss_angle( M_PI - std::asin(std::sin(angle_diff)*scale_center_to_shell/otherShell_radius) );
+              assert(ss_angle >= M_PI/2.0);
+                      // We know that this angle must be larger than Pi/2 here by construction of the problem
+
+              length_type scale_center_shell_dist( otherShell_radius * std::sin(M_PI-(angle_diff+ss_angle)) / std::sin(angle_diff) );
+              assert(scale_center_shell_dist>0.0);
+
+              // Check whether the calculated distance is within the forseen bounds and warn if not
+              if( scale_center_shell_dist > std::sqrt(scale_center_to_shell_y*scale_center_to_shell_y 
+                                                      + scale_center_to_shell_z*scale_center_to_shell_z) * (1.0+TOLERANCE) )
+              {
+        //                 log.warn("Orthogonal cylinder scaling, EDGE_HITS_BARREL case: scale-center-to-shell distance is out of foreseen bounds:");
+        //                 log.warn("   distance=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s",
+        //                              scale_center_shell_dist, scale_center_to_shell_y, scale_center_to_shell_z);
+                      ; // FIXME fix logger first!
+              }
+
+              if(scale_angle <= M_PI/4.0)
+              {
+                  Real cos_scale_angle( std::cos(scale_angle) );
+                  z1_new = std::min(z1, (scale_center_z + cos_scale_angle * scale_center_shell_dist));
+                  r_new  = std::min(r, (this->*r1_function[di])(z1_new));
+              }
+              else
+              {
+                  Real sin_scale_angle( std::sin(scale_angle) );
+                  r_new  = std::min(r,  (scale_center_r + sin_scale_angle * scale_center_shell_dist));
+                  z1_new = std::min(z1, (this->*z1_function[di])(r_new));
+              }
+          } 
+          break;
+
+          case BARREL_HITS_BARREL:
+          {   
+              // The scaling cylinder hits the barrel of 'otherShell' with its barrel
+              if(scale_angle == 0.0)
+              {
+                  // In this case the cylinders can never hit; just leave the lenghts as they are
+                  r_new = r;
+                  z1_new = z1;
+              }
+              else
+              {
+                  // case scale_angle > 0
+                  r_new  = std::min(r, (ref_to_shell_y - otherShell_radius));
+                  z1_new = std::min(z1, (this->*z1_function[di])(r_new));
+              }
+          }     
+          break;
+
+          default:
+              
+              throw unsupported("get_dr_dzright_dzleft_to_CylindricalShape: Bad situation for making cylinders against cylinders.");
+              
+      }; // switch(collision_situation)
+      
+      return create_vector<position_type>(r_new, z1_new, z2_new);
+            
+    };
+    
+    /***********************************/
+    /* Collision of parallel cylinders */
+    /***********************************/
     inline position_type get_dr_dzright_dzleft_to_parallel_CylindricalShape()
     {
         // Calculates the new testShell dimensions when scaled with respect
@@ -528,13 +974,13 @@ class CylinderScalingHelperTools
         // otherwise: shell_angle is ok -> do nothing
 
         if(to_edge_angle <= scale_angle)
-        {   // shell hits the scaling cylinder on top
+        {   // otherShell collides with the scaling cylinder ('testShell') on top
             z1_new = std::min(z1, (ref_to_shell_z - otherShell_hl) );
             r_new  = std::min(r,  (this->*r1_function[this->di])(z1_new) );
                      // TODO if z1 hasn't changed we also don't have to recalculate this
         }
         else
-        {   // shell hits the scaling cylinder on the radial side
+        {   // otherShell collides with the scaling cylinder ('testShell') on the radial side
             r_new  = std::min(r, (ref_to_shell_r - otherShell_radius) );
             z1_new = std::min(z1, (this->*z1_function[this->di])(r_new) );
         }
@@ -542,7 +988,9 @@ class CylinderScalingHelperTools
         return create_vector<position_type>(r_new, z1_new, z2_new);
     };
     
-    
+    /****************************/
+    /* FURTHER HELPER FUNCTIONS */
+    /****************************/
     // Wrappers for cylinder scaling functions passed as member functions of CSF
     // This overhead is necessary because C++ cannot directly form a pointer to  
     // the bound member functions of CSF
