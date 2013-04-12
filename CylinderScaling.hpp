@@ -119,7 +119,8 @@ class CylinderScalingHelperTools
   typedef int                                 direction_type;
   typedef Real                                angle_type; // TODO could be improved
   
-  enum collision_type { BARREL_HITS_FLAT, EDGE_HITS_EDGE, BARREL_HITS_EDGE, FLAT_HITS_BARREL, EDGE_HITS_BARREL, BARREL_HITS_BARREL };
+  enum collision_type { BARREL_HITS_FLAT, EDGE_HITS_EDGE, BARREL_HITS_EDGE, 
+                        FLAT_HITS_BARREL, EDGE_HITS_BARREL, BARREL_HITS_BARREL };
   
   // define scaling helper function type to later define an array
   // of scaling functions with direction_type index
@@ -223,6 +224,263 @@ class CylinderScalingHelperTools
     // Helper method to determine how precisely the testShell hits the otherShell
     inline collision_type determine_collision_type()
     {
+      
+      int quadrant = 0;
+      collision_type collision_situation;
+      
+      if(ref_to_shell_x2 < 0.0 && ref_to_shell_y2 < 0.0)
+      {
+            // Quadrant 1
+            quadrant = 1;
+
+            // Scale cylinder one until its height is equal to the z-distance minus the radius of the cyl. shell 2;
+            // Then check whether any point of the axis of cyl. 2 projected on the top side of cyl. 1 is inside the radius of (scaled) cyl. 1.
+            // If this is the case, we have the flat side of cyl. 1 hitting the barrel of cyl. 2. Else we have the edge hitting the barrel.
+            length_type r1_touch( (scale_center_to_shell_z - otherShell_radius) * tan_scale_angle );
+
+            if(r1_touch >= scale_center_to_shell_y)
+                // At least a part of the projected axis is within r_touch => flat side of scaled cyl. hits the barrel of cyl. 2
+                // Note that we know that at least a part of the shell is above the top side of the scaled cylinder (quadrant 1 condition)
+                collision_situation = FLAT_HITS_BARREL;
+            else
+                collision_situation = EDGE_HITS_BARREL;
+      }
+      else if(ref_to_shell_x2 >= 0.0 && ref_to_shell_y2 < 0.0)
+      {
+            // Quadrant 2
+            quadrant = 2;
+
+            length_type scale_center_to_shell_x_minus_half_length( scale_center_to_shell_x - otherShell_hl );
+                        // just because this is reused several times below
+
+            // The case scale_angle=0, i.e. radius remaining constant at scaling, has to be treated separately
+            // because in this case the mathematics in the standard case misdetect the collision situation
+            if(scale_angle == 0.0)
+            {                
+                if( std::sqrt( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length
+                               + scale_center_to_shell_y*scale_center_to_shell_y) < r )
+                // The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
+                // Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
+                    collision_situation = FLAT_HITS_BARREL;
+                    
+                else
+                    collision_situation = EDGE_HITS_EDGE;
+                    // This will also properly treat the case in which there is no collision because the projection of
+                    // the static cylinder does not overlap with the flat side circle of the scaled cylinder
+            }
+            else
+            {
+                // case scale_angle >0
+
+                // Two points on the edge of the static cylinder are of interest here:
+                // - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
+                // - the "critpoint" (critical point), which is the point on the edge with the shortest distance to the scale center                  
+                length_type scale_center_to_flatend_x( scale_center_to_shell_x_minus_half_length - scale_center_r );
+                length_type scale_center_to_lowpoint_x( std::sqrt( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length
+                                                                   + scale_center_to_shell_y*scale_center_to_shell_y ) - scale_center_r );
+                                                        // TODO Is there no better way to include scale_center_r here?
+                length_type scale_center_to_critpoint_z( scale_center_to_shell_z 
+                                                         - std::sqrt(otherShell_radius*otherShell_radius - scale_center_to_shell_y*scale_center_to_shell_y) );
+                length_type scale_center_to_lowpoint_z( scale_center_to_shell_z - otherShell_radius );
+
+                // Strategy:
+                // - When the scale angle is smaller than the angle between the scaled cylinder's axis and the line
+                //   that links the critpoint then we have a BARREL_HITS_FLAT situation.
+                // - When the scale angle is bigger than the angle between the scaled cylinder's axis and the line
+                //   that links the lowpoint then we are in a FLAT_HITS_BARREL situation.                  
+                // - Everything else results in EDGE_HITS_EDGE.
+
+                // Calculate the angle between the scaled cylinder's axis and the line that links the scale center and lowpoint
+                angle_type scale_center_to_shell_crit_angle_y( 0.0 );
+                
+                if(scale_center_to_critpoint_z == 0.0)
+                    scale_center_to_shell_crit_angle_y = M_PI/2.0;                
+                else
+                {
+                    scale_center_to_shell_crit_angle_y = std::atan(scale_center_to_flatend_x/ scale_center_to_critpoint_z);
+                    
+                    if(scale_center_to_critpoint_z < 0.0)
+                        scale_center_to_shell_crit_angle_y += M_PI;
+                }
+
+                // Calculate the angle between the scaled cylinder's axis and the line that links the scale center and critpoint
+                angle_type scale_center_to_shell_low_angle_y( 0.0 );
+                
+                if(scale_center_to_lowpoint_z == 0.0)
+                    scale_center_to_shell_low_angle_y = M_PI/2.0;
+                else
+                {
+                    scale_center_to_shell_low_angle_y  = std::atan(scale_center_to_lowpoint_x/ scale_center_to_lowpoint_z );
+                    if(scale_center_to_lowpoint_z < 0.0)
+                        scale_center_to_shell_low_angle_y += M_PI;
+                }
+
+                // Compare the angles to determine the collision situation
+                if(scale_angle <= scale_center_to_shell_crit_angle_y)
+                    collision_situation = BARREL_HITS_FLAT;
+                else if(scale_angle >= scale_center_to_shell_low_angle_y)
+                    collision_situation = FLAT_HITS_BARREL;
+                else
+                {
+                    assert(scale_center_to_shell_crit_angle_y < scale_angle
+                              && scale_angle < scale_center_to_shell_low_angle_y);
+                    collision_situation = EDGE_HITS_EDGE;
+                    // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine
+                    r1_min = (scale_center_to_shell_x - otherShell_hl)*(1.0+TOLERANCE);
+                    h1_min = r1_min/tan_scale_angle;
+                }
+            }
+      }
+      else if(ref_to_shell_x2 < 0.0 && ref_to_shell_y2 >= 0.0)
+      {
+            // Quadrant 3
+            quadrant = 3;
+
+            // The case scale_angle=0, i.e. radius remaining constant at scaling, has to be treated separately
+            // because in this case the mathematics in the standard case misdetect the collision situation
+            if(scale_angle == 0.0)
+            {
+                if(scale_center_to_shell_y < r)
+                // The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
+                // Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
+                    collision_situation = FLAT_HITS_BARREL;
+
+                else if(scale_center_to_shell_y - otherShell_radius <= r)
+                    collision_situation = EDGE_HITS_BARREL;
+
+                else
+                    // In this case the cylinders do not hit; this is treated properly by the BARREL_HITS_BARREL routine
+                    collision_situation = BARREL_HITS_BARREL;
+            }
+            else
+            {
+                // Two points on the edge of the static cylinder are of interest here:
+                // - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
+                // - the "critpoint" (critical point), which is the point on the edge with the shortest distance to the scale center   
+                scale_center_to_shell_y -= scale_center_r;  // TODO Is there no better way to include scale_center_r here?
+                                                            // This is dangerous, permanently changing the property!
+                
+                length_type scale_center_to_critpoint_y( scale_center_to_shell_y - otherShell_radius );
+                length_type scale_center_to_lowpoint_z(  scale_center_to_shell_z - otherShell_radius );
+
+                // Calculate the angle between the scaled cylinder's axis and the line that links the scale center and critpoint
+                angle_type scale_center_to_shell_crit_angle_x( 0.0 );
+                if(scale_center_to_shell_z == 0.0)
+                    scale_center_to_shell_crit_angle_x = M_PI/2.0;
+                else
+                {
+                    scale_center_to_shell_crit_angle_x = std::atan(scale_center_to_critpoint_y / scale_center_to_shell_z);
+                    if(scale_center_to_shell_z < 0.0)
+                        scale_center_to_shell_crit_angle_x += M_PI;
+                }
+                // Calculate the angle between the scaled cylinder's axis and the line that links the scale center and lowpoint
+                angle_type scale_center_to_shell_low_angle_x( 0.0 );
+                if(scale_center_to_lowpoint_z == 0.0)
+                    scale_center_to_shell_low_angle_x = M_PI/2.0;
+                else
+                {
+                    scale_center_to_shell_low_angle_x  = std::atan(scale_center_to_shell_y / scale_center_to_lowpoint_z);
+                    if(scale_center_to_lowpoint_z < 0.0)
+                        scale_center_to_shell_low_angle_x += M_PI;
+                }
+                // Determine which collision will happen:
+                // If the scale angle is bigger than the angle between the scaled cylinder's axis and the lowpoint
+                // then we hit the barrel of the static cylinder when scaling.
+                // If the scale angle is smaller than the angle between the scaled cylinder's axis and the critpoint
+                // the barrel of the scaled cylinder will hit the barrel of the static cylinder.
+                // Otherwise we have the edge of the scaled cylinder hitting the barrel of the static cylinder.
+                if(scale_angle <= scale_center_to_shell_crit_angle_x)
+                    collision_situation = BARREL_HITS_BARREL;
+                else if(scale_center_to_shell_low_angle_x <= scale_angle)
+                    collision_situation = FLAT_HITS_BARREL;
+                else
+                {
+                    assert(scale_center_to_shell_crit_angle_x < scale_angle
+                              && scale_angle < scale_center_to_shell_low_angle_x);
+                    collision_situation = EDGE_HITS_BARREL;
+                }
+            }
+      }
+      else
+      {
+            // Quadrant 4
+            quadrant = 4;
+
+            assert(ref_to_shell_x2 >= 0.0 && ref_to_shell_y2 >= 0.0);
+
+            length_type scale_center_to_shell_x_minus_half_length( scale_center_to_shell_x - otherShell_hl );
+            length_type scale_center_to_shell_x_minus_half_length_sq( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length );
+            length_type scale_center_to_shell_y_minus_radius( scale_center_to_shell_y - otherShell_radius );
+
+            // Two points on the edge of the static cylinder are of interest here:
+            // - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
+            // - the "critpoint" (critical point), which is the point on the edge with the minimal y-distance to
+            //   the scale center in the zy-plane
+            length_type scale_center_to_critpoint_r( std::sqrt(scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius
+                                                               + scale_center_to_shell_x_minus_half_length_sq) - scale_center_r );  // a_r
+            length_type scale_center_to_lowpoint_r( std::sqrt(scale_center_to_shell_y*scale_center_to_shell_y 
+                                                              + scale_center_to_shell_x_minus_half_length_sq) - scale_center_r );  // b_r
+            length_type scale_center_to_lowpoint_z( scale_center_to_shell_z - otherShell_radius );  // b_z
+
+            // Calculate the angle between the z-axis of the scaled cylinder and the line that
+            // connects this axis with the "critpoint" on the static cylinder's edge
+            angle_type scale_center_to_shell_crit_angle_xy( 0.0 );
+            if(scale_center_to_shell_z == 0.0)
+                scale_center_to_shell_crit_angle_xy = M_PI/2.0;
+            else
+            {
+                scale_center_to_shell_crit_angle_xy = std::atan(scale_center_to_critpoint_r / scale_center_to_shell_z);
+                if(scale_center_to_shell_z < 0.0)
+                    scale_center_to_shell_crit_angle_xy += M_PI;
+            }
+
+            // Calculate the angle between the z-axis of the scaled cylinder and the line that
+            // connects this axis with the "lowpoint" on the static cylinder's edge
+            angle_type scale_center_to_shell_low_angle_xy( 0.0 );
+            if(scale_center_to_lowpoint_z == 0.0)
+                scale_center_to_shell_low_angle_xy = M_PI/2.0;
+            else
+            {
+                scale_center_to_shell_low_angle_xy  = std::atan(scale_center_to_lowpoint_r / scale_center_to_lowpoint_z );
+                if(scale_center_to_lowpoint_z < 0.0)
+                    scale_center_to_shell_low_angle_xy += M_PI;
+            }
+
+            // First treat the special case: when the scale center is further away from the z-axis than the "critpoint" (in the xy-plane).
+            // This also treats the case in which scale_angle = 0 and the scaled cylinder is directly below the static shell.
+            if(scale_center_to_critpoint_r <= 0.0)
+            {
+                collision_situation = EDGE_HITS_EDGE;
+
+                if(scale_center_to_lowpoint_r <= 0.0)
+                    collision_situation = FLAT_HITS_BARREL;
+            }
+            // Now the standard case:
+            else
+            {
+                if(scale_angle <= scale_center_to_shell_crit_angle_xy)
+                    collision_situation = BARREL_HITS_EDGE;
+
+                else if(scale_center_to_shell_low_angle_xy <= scale_angle)
+                    collision_situation = FLAT_HITS_BARREL;
+
+                else
+                {
+                    assert(scale_center_to_shell_crit_angle_xy < scale_angle 
+                           && scale_angle < scale_center_to_shell_low_angle_xy 
+                           && scale_angle > 0.0);
+                           
+                    collision_situation = EDGE_HITS_EDGE;
+                    // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine
+                    r1_min = std::sqrt(scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length +
+                                       scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius) * (1.0+TOLERANCE);
+                    h1_min = r1_min / tan_scale_angle;
+                }
+            }
+      }
+      
+      return collision_situation;
+      
     };
     
     // Helper method that calculates the new lengths for the specific collision determined above
@@ -333,6 +591,8 @@ class CylinderScalingHelperTools
     length_type         ref_to_shell_x, ref_to_shell_y, ref_to_shell_z;
     length_type         ref_to_shell_x2, ref_to_shell_y2, ref_to_shell_z2;
     length_type         scale_center_to_shell_x, scale_center_to_shell_y, scale_center_to_shell_z;
+    
+    length_type         r1_min, h1_min; // used in rootfinder routine in EDGE_HITS_EDGE case
     
     
   public:       // CONSTRUCTOR
