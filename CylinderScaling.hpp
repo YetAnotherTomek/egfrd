@@ -151,16 +151,12 @@ class CylinderScalingHelperTools
     // TESTING methods; to test whether scaling functions passed to this class
     // via CylinderScalingFunctionsWrap class are correctly invoked from Python
     length_type test_r1_function(length_type z)  // TESTING
-    {
-        this->di = int(scale_angle == 1.0 ? 1 : 0);
-        
+    {        
         return (this->*r1_function[this->di])(z);
     };
     
     length_type test_z1_function(length_type r)  // TESTING
-    {
-        this->di = int(scale_angle == 1.0 ? 1 : 0);
-        
+    {        
         return (this->*z1_function[this->di])(r);
     };
     
