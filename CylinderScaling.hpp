@@ -179,6 +179,45 @@ class CylinderScalingHelperTools
     // Helper method to construct the local coordinate system for orthogonal scaling
     inline void construct_local_coordinate_system()
     {
+        // First define local_x depending on how the otherShell is oriented
+        // with respect to the inter-shell-vector
+        if(dot_product(ref_to_shell_vec, otherShell_orientation_vector) >= 0)
+            local_x = otherShell_orientation_vector;
+        else
+            local_x = multiply(otherShell_orientation_vector, -1.0);
+        
+        // Now calculate local_z, taking into account on which side of 
+        // testShell the otherShell is
+        local_z = multiply(testShell_orientation_vector, direction);
+        // local_y then is calculated as the cross product
+        position_type cross( cross_product(local_x, local_z) );
+        // However, we have some freedom of choice in the direction of local_y;
+        // here we want it to point towards otherShell
+        if(dot_product(ref_to_shell_vec, cross) >= 0)
+            // cross already points towards the shell, we are fine
+            local_y = cross;
+        else
+            // it points away from the shell, thus negate it
+            local_y = multiply(cross, -1.0);
+
+        // Transform the vector pointing from the ref. point towards the shell
+        // into the local coordinate system
+        ref_to_shell_x = dot_product(ref_to_shell_vec, local_x);
+        ref_to_shell_y = dot_product(ref_to_shell_vec, local_y);
+        ref_to_shell_z = dot_product(ref_to_shell_vec, local_z);
+        assert((ref_to_shell_x >= 0.0) && (ref_to_shell_y >= 0.0) && (ref_to_shell_z >= 0.0));
+              // by the definition of the local coordinate system
+              
+        // Also calculate the coordinates of the scale center
+        // FIXME Attention: The scale center is not always on the z-axis!
+        scale_center_to_shell_x = ref_to_shell_x;
+        scale_center_to_shell_y = ref_to_shell_y;
+        scale_center_to_shell_z = ref_to_shell_z - scale_center_z;
+        // And the coordinates of the closest corner of a box surrounding the shape
+        ref_to_shell_x2 = ref_to_shell_x - otherShell_hl;
+        ref_to_shell_y2 = ref_to_shell_y - otherShell_radius;
+        ref_to_shell_z2 = ref_to_shell_z - otherShell_radius; // not really needed, but defined here for completeness
+        
     };
     
     // Helper method to determine how precisely the testShell hits the otherShell
