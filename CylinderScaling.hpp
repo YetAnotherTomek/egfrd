@@ -121,6 +121,14 @@ class CylinderScalingHelperTools
   
   enum collision_type { BARREL_HITS_FLAT, EDGE_HITS_EDGE, BARREL_HITS_EDGE, 
                         FLAT_HITS_BARREL, EDGE_HITS_BARREL, BARREL_HITS_BARREL };
+                        
+  enum collision_quadrant_type {
+          LOWER_LEFT,   // otherShell overlaps with intersection of testShell in all four quadrants
+          UPPER_LEFT,   // otherShell overlaps with intersection of testShell in the two quadrants closest to flat side of otherShell
+          LOWER_RIGHT,  // otherShell overlaps with intersection of testShell in the two quadrants closest to projected barrel of otherShell
+          UPPER_RIGHT,  // otherShell overlaps with intersection of testShell only in the quadrant closest to midpoint of otherShell          
+          UNDETERMINED  // the default bogus value
+       };
   
   // define scaling helper function type to later define an array
   // of scaling functions with direction_type index
@@ -224,14 +232,14 @@ class CylinderScalingHelperTools
     // Helper method to determine how precisely the testShell hits the otherShell
     inline collision_type determine_collision_type()
     {
-      
-      int quadrant = 0;
-      collision_type collision_situation;
+            
+      collision_type collision_situation; // will be returned by this function      
+      collision_quadrant_type quadrant = UNDETERMINED;
       
       if(ref_to_shell_x2 < 0.0 && ref_to_shell_y2 < 0.0)
       {
             // Quadrant 1
-            quadrant = 1;
+            quadrant = LOWER_LEFT;
 
             // Scale cylinder one until its height is equal to the z-distance minus the radius of the cyl. shell 2;
             // Then check whether any point of the axis of cyl. 2 projected on the top side of cyl. 1 is inside the radius of (scaled) cyl. 1.
@@ -248,7 +256,7 @@ class CylinderScalingHelperTools
       else if(ref_to_shell_x2 >= 0.0 && ref_to_shell_y2 < 0.0)
       {
             // Quadrant 2
-            quadrant = 2;
+            quadrant = UPPER_LEFT;
 
             length_type scale_center_to_shell_x_minus_half_length( scale_center_to_shell_x - otherShell_hl );
                         // just because this is reused several times below
@@ -326,6 +334,7 @@ class CylinderScalingHelperTools
                               && scale_angle < scale_center_to_shell_low_angle_y);
                     collision_situation = EDGE_HITS_EDGE;
                     // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine
+                    // TODO Outsource this from this function
                     r1_min = (scale_center_to_shell_x - otherShell_hl)*(1.0+TOLERANCE);
                     h1_min = r1_min/tan_scale_angle;
                 }
@@ -334,7 +343,7 @@ class CylinderScalingHelperTools
       else if(ref_to_shell_x2 < 0.0 && ref_to_shell_y2 >= 0.0)
       {
             // Quadrant 3
-            quadrant = 3;
+            quadrant = LOWER_RIGHT;
 
             // The case scale_angle=0, i.e. radius remaining constant at scaling, has to be treated separately
             // because in this case the mathematics in the standard case misdetect the collision situation
@@ -404,9 +413,9 @@ class CylinderScalingHelperTools
       else
       {
             // Quadrant 4
-            quadrant = 4;
+            quadrant = UPPER_RIGHT;
 
-            assert(ref_to_shell_x2 >= 0.0 && ref_to_shell_y2 >= 0.0);
+            assert(ref_to_shell_x2 >= 0.0 && ref_to_shell_y2 >= 0.0); // this just must be true!
 
             length_type scale_center_to_shell_x_minus_half_length( scale_center_to_shell_x - otherShell_hl );
             length_type scale_center_to_shell_x_minus_half_length_sq( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length );
@@ -471,7 +480,8 @@ class CylinderScalingHelperTools
                            && scale_angle > 0.0);
                            
                     collision_situation = EDGE_HITS_EDGE;
-                    // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine
+                    // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine 
+                    // TODO Outsource this from this function
                     r1_min = std::sqrt(scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length +
                                        scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius) * (1.0+TOLERANCE);
                     h1_min = r1_min / tan_scale_angle;
