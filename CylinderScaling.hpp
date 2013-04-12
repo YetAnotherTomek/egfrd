@@ -334,9 +334,9 @@ class CylinderScalingHelperTools
                               && scale_angle < scale_center_to_shell_low_angle_y);
                     collision_situation = EDGE_HITS_EDGE;
                     // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine
-                    // TODO Outsource this from this function
-                    r1_min = (scale_center_to_shell_x - otherShell_hl)*(1.0+TOLERANCE);
-                    h1_min = r1_min/tan_scale_angle;
+                    // TODO can we not outsource this from here?
+                    this->r1_min = (scale_center_to_shell_x - otherShell_hl)*(1.0+TOLERANCE);
+                    this->h1_min = this->r1_min / tan_scale_angle;
                 }
             }
       }
@@ -481,10 +481,10 @@ class CylinderScalingHelperTools
                            
                     collision_situation = EDGE_HITS_EDGE;
                     // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine 
-                    // TODO Outsource this from this function
-                    r1_min = std::sqrt(scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length +
-                                       scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius) * (1.0+TOLERANCE);
-                    h1_min = r1_min / tan_scale_angle;
+                    // TODO can we not outsource this from here?
+                    this->r1_min = std::sqrt(scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length +
+                                             scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius) * (1.0+TOLERANCE);
+                    this->h1_min = this->r1_min / tan_scale_angle;
                 }
             }
       }
