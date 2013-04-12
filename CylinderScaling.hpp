@@ -167,15 +167,22 @@ class CylinderScalingHelperTools
     
   private:          // HELPER METHODS
 
-    inline void determine_direction_and_coordinate_system()
+    inline void determine_direction()
     {
         // For now this is still done in Python
     };
     
     // Collision of orthogonal cylinders
     inline position_type get_dr_dzright_dzleft_to_orthogonal_CylindricalShape()
-    {        
+    {
+        construct_local_coordinate_system();
+        
         return get_dr_dzright_dzleft_for_specific_collision( determine_collision_type() );
+    };
+    
+    // Helper method to construct the local coordinate system for orthogonal scaling
+    inline void construct_local_coordinate_system()
+    {
     };
     
     // Helper method to determine how precisely the testShell hits the otherShell
@@ -252,7 +259,7 @@ class CylinderScalingHelperTools
     position_type       testShell_dimensions;   // first entry radius r, second z1, third z2
     position_type       otherShell_position_t;
     position_type       otherShell_orientation_vector;
-    position_type       otherShell_dimensions;  // 1st entry radius r, 2nd half_length, 3rd unused
+    position_type       otherShell_dimensions;  // 1st entry radius r, 2nd half_length, 3r http://www.imaginefilmfestival.nl/d unused
     position_type       scale_center_info;      // 1st entry r-coord. of the scale center, 2nd z-coord.
     position_type       scale_angle_info;       // 1st entry scale_angle, 2nd entry tan(scale_angle), 3rd unused;
                                                 // tan(scale_angle) is calculated in Python already at shell 
@@ -285,8 +292,12 @@ class CylinderScalingHelperTools
     scaling_function_pt_type z2_function[2];
     
     // Important vectors and lengths used throughout the calculations
+    // Local coordinate system in orthogonal scaling
+    position_type       local_x, local_y, local_z;    
     position_type       ref_to_shell_vec;
-    length_type         ref_to_shell_z;
+    length_type         ref_to_shell_x, ref_to_shell_y, ref_to_shell_z;
+    length_type         ref_to_shell_x2, ref_to_shell_y2, ref_to_shell_z2;
+    length_type         scale_center_to_shell_x, scale_center_to_shell_y, scale_center_to_shell_z;
     
     
   public:       // CONSTRUCTOR
