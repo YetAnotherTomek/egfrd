@@ -880,22 +880,22 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         z1 = z_right
         z2 = z_left        
 
-        # TESTING pythonified CylinderScalingFunctions
-        test_output_fromPython  = testShell.z_right(shell_radius)
-        test_output_fromCPP     = calls_z_right(testShell.ScalingFunctions, shell_radius)
-        log.info("TESTING CSF: shell_position=%s, shell_radius=%s, testShell.z_right(shell_radius)=%s, calls_z_right(shell_radius)=%s" % (shell_position, shell_radius, test_output_fromPython, test_output_fromCPP) )
+        ## TESTING pythonified CylinderScalingFunctions
+        #test_output_fromPython  = testShell.z_right(shell_radius)
+        #test_output_fromCPP     = calls_z_right(testShell.ScalingFunctions, shell_radius)
+        #log.info("TESTING CSF: shell_position=%s, shell_radius=%s, testShell.z_right(shell_radius)=%s, calls_z_right(shell_radius)=%s" % (shell_position, shell_radius, test_output_fromPython, test_output_fromCPP) )
 
-        # TESTING pythonified CylinderScalingHelperTools
-        HT = CylinderScalingHelperTools(testShell.ScalingFunctions, direction)
+        ## TESTING pythonified CylinderScalingHelperTools
+        #HT = CylinderScalingHelperTools(testShell.ScalingFunctions, direction)
 
-        test_z1_output_fromHT   = HT.test_z1_function(shell_radius)
-        test_z1_output_fromHere = z1_function(shell_radius)
+        #test_z1_output_fromHT   = HT.test_z1_function(shell_radius)
+        #test_z1_output_fromHere = z1_function(shell_radius)
 
-        test_r1_output_fromHT   = HT.test_r1_function(shell_radius)
-        test_r1_output_fromHere = r1_function(shell_radius)        
+        #test_r1_output_fromHT   = HT.test_r1_function(shell_radius)
+        #test_r1_output_fromHere = r1_function(shell_radius)        
 
-        log.info("TESTING HT (z1): shell_radius=%s, HelperTools.test_z1_function(shell_radius)=%s, self.z1_function(shell_radius)=%s" % (shell_radius, test_z1_output_fromHT, test_z1_output_fromHere) )
-        log.info("TESTING HT (r1): shell_radius=%s, HelperTools.test_r1_function(shell_radius)=%s, self.r1_function(shell_radius)=%s" % (shell_radius, test_r1_output_fromHT, test_r1_output_fromHere) )
+        #log.info("TESTING HT (z1): shell_radius=%s, HelperTools.test_z1_function(shell_radius)=%s, self.z1_function(shell_radius)=%s" % (shell_radius, test_z1_output_fromHT, test_z1_output_fromHere) )
+        #log.info("TESTING HT (r1): shell_radius=%s, HelperTools.test_r1_function(shell_radius)=%s, self.r1_function(shell_radius)=%s" % (shell_radius, test_r1_output_fromHT, test_r1_output_fromHere) )
         
     # else -> use z_left
     else:
@@ -921,10 +921,14 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     otherShell_position_t         = shell_position_t
     otherShell_orientation_vector = shape.unit_z
     otherShell_dimensions = [shell_radius, shell_half_length, shell_half_length] # last vector component unused
-    # TODO Pass on info to C++ here:
-    #   testShell_reference_point, testShell_orientation_vector, testShell_dimensions,
-    #   otherShell_position_t, otherShell_orientation_vector, otherShell_dimensions,
-    #   direction, scale_center_info, scale_angle_info
+    # Pass on to helper tools class, extended into Python from C++
+    HT = CylinderScalingHelperTools(testShell.ScalingFunctions, \
+                                    testShell_reference_point, testShell_orientation_vector, testShell_dimensions, \
+                                    otherShell_position_t, otherShell_orientation_vector, otherShell_dimensions, \
+                                    direction, scale_center_info, scale_angle_info
+                                   )
+
+    scaled_r_z1_z2 = HT.get_dr_dzright_dzleft_to_CylindricalShape()
 
     # Check how the cylinders are oriented with respect to each other
     relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))

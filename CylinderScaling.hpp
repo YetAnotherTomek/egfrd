@@ -137,6 +137,13 @@ class CylinderScalingHelperTools
   
   public:       // METHODS          
         
+    /****************/
+    /* MAIN METHOD  */    
+    /****************/
+    // Gives back the new cylinder dimensions.
+    // Note that this only works properly if the whole class was correctly instantiated,
+    // i.e. passing all necessary information via the constructor and storing it in
+    // the required variables.
     inline position_type get_dr_dzright_dzleft_to_CylindricalShape()
     {
         // The master method that calls downstream helper methods in the right order
@@ -1142,15 +1149,15 @@ class CylinderScalingHelperTools
   public:       // CONSTRUCTOR
     
     CylinderScalingHelperTools( CylinderScalingFunctionsWrap<Ttraits_> *CSF_, 
-                                position_type  testShell_reference_point_,
-                                position_type  testShell_orientation_vector_,
-                                position_type  testShell_dimensions_,
-                                position_type  otherShell_position_t_,
-                                position_type  otherShell_orientation_vector_,
-                                position_type  otherShell_dimensions_,
-                                direction_type direction_,
-                                position_type  scale_center_info_, 
-                                position_type  scale_angle_info_                 ):
+                                position_type   testShell_reference_point_,
+                                position_type   testShell_orientation_vector_,
+                                position_type   testShell_dimensions_,
+                                position_type   otherShell_position_t_,
+                                position_type   otherShell_orientation_vector_,
+                                position_type   otherShell_dimensions_,
+                                direction_type  direction_,
+                                position_type   scale_center_info_, 
+                                position_type   scale_angle_info_                 ):
      CSF(CSF_),
      testShell_reference_point(testShell_reference_point_),
      testShell_orientation_vector(testShell_orientation_vector_),
@@ -1202,100 +1209,6 @@ class CylinderScalingHelperTools
 
 
 
-
-
-
-
-
-
-
-// OLDER STUFF; TODO Remove when the rest works
-template <typename Ttraits_>
-static typename Ttraits_::position_type
-get_dr_dzright_dzleft_to_orthogonal_CylindricalShape( typename Ttraits_::position_type      const& pos,
-                                                      typename Ttraits_::length_type        const& l1,
-                                                      typename Ttraits_::length_type        const& l2,   
-                                                      char*                                        f1 )
-{
-  
-    typedef typename Ttraits_::position_type    position_type;
-    typedef typename Ttraits_::length_type      length_type;
-    
-    length_type l3(0.0);
-    //double result;
-    
-//     std::cout << "Arguments: pos=" << pos 
-//               << " l1=" << l1
-//               << " l2=" << l2
-//               << " f1=" << f1
-//               << std::endl;
-//     
-//     PyObject *pModuleName, *pModule, *pFunc, *pValue, *pArgs, *pResult;
-// 
-//     // Initialize the Python Interpreter
-//     Py_Initialize();
-// 
-//     pModuleName = PyString_FromString("shells");    
-//     //pFuncName   = PyString_FromString(f1);
-//     pModule = PyImport_Import(pModuleName);
-//     if(pModule) std::cout << "Imported Python module." << std::endl;
-//     // pDict is a borrowed reference 
-//     //pDict = PyModule_GetDict(pModule);
-//     // pFunc is also a borrowed reference 
-//     std::cout << "Trying to import function " << f1 << std::endl;
-//     //pFunc = PyDict_GetItemString(pDict, f1);
-//     pFunc = PyObject_GetAttrString(pModule, f1);
-//     std::cout << "Imported Python function." << std::endl;       
-//     
-//     if (pFunc && PyCallable_Check(pFunc)) 
-//     {
-//         std::cout << "Building arguments for " << f1 << std::endl;
-//         //pArgs = PyTuple_New(1);
-//         pArgs = PyTuple_Pack(1, PyFloat_FromDouble(l1));
-//         pValue = PyFloat_FromDouble((double)l1);
-//         double reconverted( PyFloat_AsDouble(pValue) );
-//         std::cout << "Converted argument evaluates to " << reconverted << std::cout;
-//         //PyTuple_SetItem(pArgs, 0, pValue);
-// 
-//         std::cout << "Trying to call function " << f1 << std::endl;
-//         pResult = PyObject_CallObject(pFunc, pArgs);
-//         
-//         if (pResult != NULL) {
-//             std::cout << "Converting " << pResult << std::endl;
-//             result = PyFloat_AsDouble(pResult);
-//             l3 = (length_type)PyFloat_AsDouble(pResult);
-//             std::cout << "Converted result = " << result << ", l3 = " << l3 << std::endl;
-//         }
-//     }
-//     else 
-//     {
-//         std::cout << "Cannot execute Python function." << std::endl;
-//         PyErr_Print();
-//     }
-
-
-    std::cout << "Constructing result" << std::endl;
-    const position_type return_vector( multiply(pos, l3) );         // TESTING some test output to check functionality of geometry and type conversion
-    std::cout << "Result is " << return_vector << std::endl;
-    
-//     // Clean up    
-//     Py_DECREF(pModule);
-//     Py_DECREF(pModuleName);
-//     Py_DECREF(pFunc);
-//     Py_DECREF(pValue);
-//     Py_DECREF(pArgs);    
-//     Py_DECREF(pResult);
-//     
-//         
-//     // Finish the Python Interpreter
-//     std::cout << "Shutting down python interpereter" << std::endl;    
-//     Py_Finalize();
-
-
-    std::cout << "Returning" << std::endl;
-    return return_vector;
-  
-};
 
 
 
