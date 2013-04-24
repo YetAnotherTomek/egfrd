@@ -16,7 +16,6 @@ from _gfrd import (
     CuboidalRegion,
     CylinderScalingFunctions,
     calls_z_right,
-    get_dr_dzright_dzleft_to_orthogonal_CylindricalShape,
     CylinderScalingHelperTools
     )
 
@@ -929,6 +928,13 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
                                    )
 
     scaled_r_z1_z2 = HT.get_dr_dzright_dzleft_to_CylindricalShape()
+    r_new_c  = scaled_r_z1_z2[0]
+    z1_new_c = scaled_r_z1_z2[1]
+    z2_new_c = scaled_r_z1_z2[2]
+
+
+    # HERE THE OLD (PYTHON-BASED) CALCULATIONS START
+    # TODO REMOVE THIS AFTER TESTING
 
     # Check how the cylinders are oriented with respect to each other
     relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))
@@ -1534,6 +1540,12 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         raise NotImplementedError('get_dr_dzright_dzleft_to_CylindricalShape: Cylinders should be oriented parallel or perpendicular.')
 
     z2_new = min(z2, z2_function(r_new))
+
+
+    # Print a comparison between the old (Python-based) and new (C++-based) results
+    log.info("SHELLSCALING COMPARISON:\n")
+    log.info("Python : r_new = %s, z1_new = %s, z2_new = %s \n" % (r_new, z1_new, z2_new) )
+    log.info("C++    : r_new = %s, z1_new = %s, z2_new = %s \n" % (r_new_c, z1_new_c, z2_new_c) )
 
     # switch the z values in case it's necessary. r doesn't have to be switched.
     r = r_new
