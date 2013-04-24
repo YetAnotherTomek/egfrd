@@ -574,7 +574,7 @@ class CylinderScalingHelperTools
     {
       
       // The return lengths
-      length_type r_new, z1_new, z2_new;
+      length_type r_new, z1_new, z2_new; // TODO what happens with z2_new?
       
       // Some commonly used values
       length_type otherShell_radius_sq( otherShell_radius*otherShell_radius );
@@ -663,13 +663,16 @@ class CylinderScalingHelperTools
                     // In this case there is no analytical solution, we have to use a rootfinder.
                     // To this purpuse we make use of the GSL Brent rootfinder.                                        
 
-                    // Construct a rootfinder instance based on the function defined above
-                    int status;
-                    int iter = 0, max_iter = 100;
+                    // Construct a rootfinder instance based on the function defined above                    
                     const gsl_root_fsolver_type *solver;
-                    gsl_root_fsolver *solver_pt;
-                    double r = 0, r_expected = sqrt(5.0); // ?
+                    gsl_root_fsolver *solver_ref;
+                    int rf_status;
+                    int iter = 0, max_iter = 100;
+                    double x_lo, x_hi;
+                    double root = 0;
+                    // The function to be solved has to be casted to the right (GSL) format
                     gsl_function F;                    
+                    // The parameters are required to be passed by a grouping structure
                     struct edge_hits_edge_eq_params p = { tan_scale_angle, 
                                                           scale_center_to_shell_edge_x, 
                                                           scale_center_to_shell_y, 
@@ -680,18 +683,42 @@ class CylinderScalingHelperTools
                     // Pack function and parameters into the format required by GSL
                     F.function = (double (*)(double, void*))(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq); // FIXME Is this cast working properly?
                     F.params = &p;
+                    
                     // Set the iteration bounds
                     length_type h1_interval_min( (this->*z1_function[di])(scale_center_to_shell_edge_x) - scale_center_z );
                     length_type h1_interval_max( (this->*z1_function[di])( std::sqrt( scale_center_to_shell_y*scale_center_to_shell_y 
-                                                        + scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) ) - scale_center_z );
+                                                          + scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) ) - scale_center_z );
                                                         
                     // Create a rootfinder instance with pointer
                     solver    = gsl_root_fsolver_brent;
-                    solver_pt = gsl_root_fsolver_alloc(solver);
+                    solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
-                    gsl_root_fsolver_set(solver_pt, &F, h1_interval_min, h1_interval_max);
+                    gsl_root_fsolver_set(solver_ref, &F, h1_interval_min, h1_interval_max);
                     
-                    // TODO WIP: Continue with the actual rootfinder iteration
+                    do
+                    {
+                        iter++;
+                        rf_status = gsl_root_fsolver_iterate(solver_ref);
+                        root = gsl_root_fsolver_root(solver_ref);
+                        x_lo = gsl_root_fsolver_x_lower(solver_ref);
+                        x_hi = gsl_root_fsolver_x_upper(solver_ref);
+                        rf_status = gsl_root_test_interval(x_lo, x_hi, 0, 0.001); // arg. 3 is absolute error, arg. 4 relative error of the found root
+                  
+                        if (rf_status == GSL_SUCCESS)
+                          printf ("Converged:\n");
+                  
+                        printf ("Iteration %4d of %4d: [%.7f, %.7f] %.7f %.7f\n",
+                                iter, max_iter, x_lo, x_hi, root, x_hi - x_lo);
+                    }
+                    while (rf_status == GSL_CONTINUE && iter < max_iter);
+                
+                    // Cleanup
+                    gsl_root_fsolver_free(solver_ref);
+                    
+                    // Finally, assemble the solution; z1_new and r_new will be passed back by this function further below
+                    length_type h_touch( scale_center_z + root );
+                    z1_new = std::min(z1, h_touch);
+                    r_new  = std::min(r,  (this->*r1_function[di])(z1_new));
 
 
                   // TODO TODO TODO - Maybe we don't need that iterative interval adaptation magic any more with the GSL rootfinder
@@ -938,7 +965,7 @@ class CylinderScalingHelperTools
               
       }; // switch(collision_situation)
       
-      return create_vector<position_type>(r_new, z1_new, z2_new);
+      return create_vector<position_type>(r_new, z1_new, z2_new); // TODO what happens with z2_new?
             
     };
     
@@ -950,7 +977,7 @@ class CylinderScalingHelperTools
         // Calculates the new testShell dimensions when scaled with respect
         // to another shell that is parallel in orientation
         
-        length_type r_new(r), z1_new(z1), z2_new(z2);
+        length_type r_new(r), z1_new(z1), z2_new(z2); // TODO what happens with z2_new?
         
         // calculate ref_to_shell_r/z in the cylindrical coordinate system on the right/left side
         position_type ref_to_shell_z_vec( multiply(testShell_orientation_vector, ref_to_shell_z) );
@@ -985,7 +1012,7 @@ class CylinderScalingHelperTools
             z1_new = std::min(z1, (this->*z1_function[this->di])(r_new) );
         }
         
-        return create_vector<position_type>(r_new, z1_new, z2_new);
+        return create_vector<position_type>(r_new, z1_new, z2_new); // TODO what happens with z2_new?
     };
     
     /****************************/
