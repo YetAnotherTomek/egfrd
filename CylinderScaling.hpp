@@ -668,7 +668,7 @@ class CylinderScalingHelperTools
                     gsl_root_fsolver *solver_ref;
                     int rf_status;
                     int iter = 0, max_iter = 100;
-                    double x_lo, x_hi;
+                    double lo, hi;
                     double root = 0;
                     // The function to be solved has to be casted to the right (GSL) format
                     gsl_function F;                    
@@ -700,15 +700,15 @@ class CylinderScalingHelperTools
                         iter++;
                         rf_status = gsl_root_fsolver_iterate(solver_ref);
                         root = gsl_root_fsolver_root(solver_ref);
-                        x_lo = gsl_root_fsolver_x_lower(solver_ref);
-                        x_hi = gsl_root_fsolver_x_upper(solver_ref);
-                        rf_status = gsl_root_test_interval(x_lo, x_hi, 0, 0.001); // arg. 3 is absolute error, arg. 4 relative error of the found root
+                        lo   = gsl_root_fsolver_x_lower(solver_ref);
+                        hi   = gsl_root_fsolver_x_upper(solver_ref);
+                        rf_status = gsl_root_test_interval(lo, hi, 0, 0.001); // arg. 3 is absolute error, arg. 4 relative error of the found root
                   
                         if (rf_status == GSL_SUCCESS)
-                          printf ("Converged:\n");
+                              printf ("Converged:\n");
                   
                         printf ("Iteration %4d of %4d: [%.7f, %.7f] %.7f %.7f\n",
-                                iter, max_iter, x_lo, x_hi, root, x_hi - x_lo);
+                                iter, max_iter, lo, hi, root, hi - lo);
                     }
                     while (rf_status == GSL_CONTINUE && iter < max_iter);
                 
@@ -780,6 +780,67 @@ class CylinderScalingHelperTools
                   }
                   else // if scale_angle > M_PI/4.0
                   {
+                    
+                    // This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
+                    // instead of h1; notice that scale_angle > 0 here, so we can divide by it
+                      
+                    // Construct a rootfinder instance based on the function defined above                    
+                    const gsl_root_fsolver_type *solver;
+                    gsl_root_fsolver *solver_ref;
+                    int rf_status;
+                    int iter = 0, max_iter = 100;
+                    double lo, hi;
+                    double root = 0;
+                    // The function to be solved has to be casted to the right (GSL) format
+                    gsl_function F;                    
+                    // The parameters are required to be passed by a grouping structure
+                    struct edge_hits_edge_eq_params p = { tan_scale_angle, 
+                                                          scale_center_to_shell_edge_x, 
+                                                          scale_center_to_shell_y, 
+                                                          scale_center_to_shell_z,
+                                                          otherShell_radius_sq
+                                                        };
+                                                        
+                    // Pack function and parameters into the format required by GSL
+                    F.function = (double (*)(double, void*))(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq); // FIXME Is this cast working properly?
+                    F.params = &p;
+                    
+                    // Set the iteration bounds
+                    length_type r1_interval_min( scale_center_to_shell_edge_x );
+                    length_type r1_interval_max( std::sqrt( scale_center_to_shell_y*scale_center_to_shell_y +
+                                                            scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) );
+                                                                          
+                    // Create a rootfinder instance with pointer
+                    solver    = gsl_root_fsolver_brent;
+                    solver_ref = gsl_root_fsolver_alloc(solver);
+                    // Initialize
+                    gsl_root_fsolver_set(solver_ref, &F, r1_interval_min, r1_interval_max);
+                    
+                    do
+                    {
+                        iter++;
+                        rf_status = gsl_root_fsolver_iterate(solver_ref);
+                        root = gsl_root_fsolver_root(solver_ref);
+                        lo   = gsl_root_fsolver_x_lower(solver_ref);
+                        hi   = gsl_root_fsolver_x_upper(solver_ref);
+                        rf_status = gsl_root_test_interval(lo, hi, 0, 0.001); // arg. 3 is absolute error, arg. 4 relative error of the found root
+                  
+                        if (rf_status == GSL_SUCCESS)
+                              printf ("Converged:\n");
+                  
+                        printf ("Iteration %4d of %4d: [%.7f, %.7f] %.7f %.7f\n",
+                                iter, max_iter, lo, hi, root, hi - lo);
+                    }
+                    while (rf_status == GSL_CONTINUE && iter < max_iter);
+                
+                    // Cleanup
+                    gsl_root_fsolver_free(solver_ref);
+                    
+                    // Finally, assemble the solution; z1_new and r_new will be passed back by this function further below
+                    r_new  = root;
+                    z1_new = std::min(z1, (this->*z1_function[di])(r_new));
+                    
+                    
                     /* // TODO TODO TODO
                     
                       // This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
@@ -861,9 +922,7 @@ class CylinderScalingHelperTools
                                 
                       r_new  = min(r, r_touch)
                       z1_new = min(z1, (this->*z1_function[di])(r_new))
-                  */ // TODO TODO TODO
-                      r_new  = r;
-                      z1_new = std::min(z1, (this->*z1_function[di])(r_new));                
+                  */ // TODO TODO TODO                  
                   }
                   
               }; // if scale_angle <> 0.0
