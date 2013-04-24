@@ -552,6 +552,8 @@ class CylinderScalingHelperTools
     // Very similar, but in a crucial part different from edge_hits_edge_h1_eq() defined above
     length_type edge_hits_edge_r1_eq(length_type x, void *params)
     {   
+        assert(tan_scale_angle != 0.0);
+        
         // Cast parameters into the right form
         struct edge_hits_edge_eq_params *p = (struct edge_hits_edge_eq_params *) params;
         // Unpack parameters
@@ -608,7 +610,7 @@ class CylinderScalingHelperTools
               length_type scale_center_to_shell_edge_z( scale_center_to_shell_z - otherShell_radius );
               // TODO Also pre-calculate the squares
 
-              if(scale_angle == 0.0)
+              if( scale_angle == 0.0 )
               {
                   // scale_angle = 0 means that the radius r will stay constant at scaling
                   // Therefore, if the projected edge of the static shell lies outside of the 
@@ -667,8 +669,10 @@ class CylinderScalingHelperTools
                   if(scale_angle <= M_PI/4.0)
                   {                    
                    
+                    printf("C++: Entering rootfinding, scale_angle <= M_PI/4.0");  // TESTING
+                    
                     // In this case there is no analytical solution, we have to use a rootfinder.
-                    // To this purpuse we make use of the GSL Brent rootfinder.                                        
+                    // To this purpuse we make use of the GSL Brent rootfinder.
 
                     // Construct a rootfinder instance based on the function defined above                    
                     const gsl_root_fsolver_type *solver;
@@ -697,10 +701,12 @@ class CylinderScalingHelperTools
                                                           + scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) ) - scale_center_z );
                                                         
                     // Create a rootfinder instance with pointer
-                    solver    = gsl_root_fsolver_brent;
+                    solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
+                    printf("C++: Initializing rootfinder.\n");  // TESTING                                        
                     gsl_root_fsolver_set(solver_ref, &F, h1_interval_min, h1_interval_max);
+                    printf("C++: Starting rootfinder iteration.\n"); // TESTING
                     
                     do
                     {
@@ -787,6 +793,7 @@ class CylinderScalingHelperTools
                   }
                   else // if scale_angle > M_PI/4.0
                   {
+                    printf("C++: Entering rootfinding, scale_angle > M_PI/4.0\n");  // TESTING
                     
                     // This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
                     // instead of h1; notice that scale_angle > 0 here, so we can divide by it
@@ -818,10 +825,12 @@ class CylinderScalingHelperTools
                                                             scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) );
                                                                           
                     // Create a rootfinder instance with pointer
-                    solver    = gsl_root_fsolver_brent;
+                    solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
+                    printf("C++: Initializing rootfinder.\n");  // TESTING
                     gsl_root_fsolver_set(solver_ref, &F, r1_interval_min, r1_interval_max);
+                    printf("C++: Starting rootfinder iteration.\n"); // TESTING
                     
                     do
                     {

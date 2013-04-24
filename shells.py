@@ -928,6 +928,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
                                    )
 
     scaled_r_z1_z2 = HT.get_dr_dzright_dzleft_to_CylindricalShape()
+    #scaled_r_z1_z2 = [0,0,0] # for TESTING, to deactivate
     r_new_c  = scaled_r_z1_z2[0]
     z1_new_c = scaled_r_z1_z2[1]
     z2_new_c = scaled_r_z1_z2[2]
@@ -1223,10 +1224,10 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
                     h1_min = r1_min/tan_scale_angle
 
         ##TODO TESTING Debug info
-        #log.info("  *** QUADRANT = %s ***" % str(quadrant) )
-        #log.info("  *** Situation = %s" % str(situation_string[situation]) )
-        #log.info("  *** testShell=%s, r=%s, z1=%s" % (str(testShell), r, z1) )
-        #log.info("  *** scale_angle=%s, tan_scale_angle=%s, scale_center_z=%s, scale_center_r=%s" % (scale_angle, tan_scale_angle, scale_center_z, scale_center_r) )
+        log.info("  *** QUADRANT = %s ***" % str(quadrant) )
+        log.info("  *** Situation = %s" % str(situation_string[situation]) )
+        log.info("  *** testShell=%s, r=%s, z1=%s" % (str(testShell), r, z1) )
+        log.info("  *** scale_angle=%s, tan_scale_angle=%s, scale_center_z=%s, scale_center_r=%s" % (scale_angle, tan_scale_angle, scale_center_z, scale_center_r) )
         #log.info("  *** shell_radius=%s, shell_half_length=%s" % (shell_radius, shell_half_length) )
         #log.info("  *** ref_to_shell_x=%s, ref_to_shell_y=%s, ref_to_shell_z=%s" % (ref_to_shell_x, ref_to_shell_y, ref_to_shell_z) )
         #log.info("  *** scale_center_to_shell_x=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s" % (scale_center_to_shell_x, scale_center_to_shell_y, scale_center_to_shell_z) )
@@ -1543,9 +1544,9 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
 
 
     # Print a comparison between the old (Python-based) and new (C++-based) results
-    log.info("SHELLSCALING COMPARISON:\n")
-    log.info("Python : r_new = %s, z1_new = %s, z2_new = %s \n" % (r_new, z1_new, z2_new) )
-    log.info("C++    : r_new = %s, z1_new = %s, z2_new = %s \n" % (r_new_c, z1_new_c, z2_new_c) )
+    log.info("SHELLSCALING COMPARISON:")
+    log.info("Python : r_new = %s, z1_new = %s, z2_new = %s" % (r_new, z1_new, z2_new) )
+    log.info("C++    : r_new = %s, z1_new = %s, z2_new = %s" % (r_new_c, z1_new_c, z2_new_c) )
 
     # switch the z values in case it's necessary. r doesn't have to be switched.
     r = r_new
