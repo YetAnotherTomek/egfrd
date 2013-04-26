@@ -109,6 +109,15 @@ class CylinderScalingFunctionsWrap : public CylinderScalingFunctions<Ttraits_>
 
 
 
+struct edge_hits_edge_eq_params
+{
+    Real         tan_scale_angle;
+    length_type  scale_center_to_shell_edge_x, scale_center_to_shell_y, scale_center_to_shell_z;
+    length_type  otherShell_radius_sq;
+};
+
+    
+    
 
 template <typename Ttraits_>
 class CylinderScalingHelperTools
@@ -130,9 +139,11 @@ class CylinderScalingHelperTools
           UNDETERMINED  // the default bogus value
        };
   
-  // define scaling helper function type to later define an array
+  // define scaling helper function reference type to later define an array
   // of scaling functions with direction_type index
   typedef length_type (CylinderScalingHelperTools<Ttraits_>::* scaling_function_pt_type)(length_type);
+  // define reference to gsl function type
+  typedef double (* gsl_function_pt_type)(double, void*);
   
   
   public:       // METHODS          
@@ -514,57 +525,63 @@ class CylinderScalingHelperTools
     // The associated helper scaling functions and a common parameter holder are defined first here:
     
     // (a) Parameter holder structure
-    struct edge_hits_edge_eq_params
-    {
-        Real         tan_scale_angle;
-        length_type  scale_center_to_shell_edge_x, scale_center_to_shell_y, scale_center_to_shell_z;
-        length_type  otherShell_radius_sq;
-    };
+//     struct edge_hits_edge_eq_params
+//     {
+//         Real         tan_scale_angle;
+//         length_type  scale_center_to_shell_edge_x, scale_center_to_shell_y, scale_center_to_shell_z;
+//         length_type  otherShell_radius_sq;
+//     };
     
     // (b) Helper function to find h1 as a function of r1 in edge_hits_edge scaling
-    length_type edge_hits_edge_h1_eq(length_type x, void *params)
+    length_type edge_hits_edge_h1_eq(length_type x, void* params)
     {
-      // Cast parameters into the right form
-      struct edge_hits_edge_eq_params *p = (struct edge_hits_edge_eq_params *) params;
-      // Unpack parameters
-      Real         tan_scale_angle  = p->tan_scale_angle;
-      length_type  scale_center_to_shell_edge_x = p->scale_center_to_shell_edge_x;
-      length_type  scale_center_to_shell_y = p->scale_center_to_shell_y;
-      length_type  scale_center_to_shell_z = p->scale_center_to_shell_z;
-      length_type  otherShell_radius_sq = p->otherShell_radius_sq;
-    
-      // We will take the square root of the following below
-      length_type sqrt_arg( (x*tan_scale_angle)*(x*tan_scale_angle) - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
+        // Cast parameters into the right form
+        struct edge_hits_edge_eq_params* p = (struct edge_hits_edge_eq_params*) params;
+        // Unpack parameters
+        Real         tan_scale_angle              = p->tan_scale_angle;
+        length_type  scale_center_to_shell_edge_x = p->scale_center_to_shell_edge_x;
+        length_type  scale_center_to_shell_y      = p->scale_center_to_shell_y;
+        length_type  scale_center_to_shell_z      = p->scale_center_to_shell_z;
+        length_type  otherShell_radius_sq         = p->otherShell_radius_sq;
+      
+        // We will take the square root of the following below
+        length_type sqrt_arg( (x*tan_scale_angle)*(x*tan_scale_angle) - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
 
-      if(sqrt_arg < 0.0 && std::abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
+        if(sqrt_arg < 0.0 && std::abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
 
-              sqrt_arg = 0.0;     // This safety check is to prevent math domain errors
-                                  // in case sqrt_arg is close to zero and taking the
-                                  // difference results in very small negative numbers
-              // log.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.")
-              // FIXME Fix logging first!
-                        
-      return (scale_center_to_shell_z - x)*(scale_center_to_shell_z - x) - otherShell_radius_sq 
-             + (scale_center_to_shell_y - std::sqrt( sqrt_arg ))*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
+                sqrt_arg = 0.0;     // This safety check is to prevent math domain errors
+                                    // in case sqrt_arg is close to zero and taking the
+                                    // difference results in very small negative numbers
+                // log.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.")
+                // FIXME Fix logging first!
+                          
+        return (scale_center_to_shell_z - x)*(scale_center_to_shell_z - x) - otherShell_radius_sq 
+                + (scale_center_to_shell_y - std::sqrt( sqrt_arg ))*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
     };
     
     // (c) Helper function to find r1 as a function of h1 in edge_hits_edge scaling
     // Very similar, but in a crucial part different from edge_hits_edge_h1_eq() defined above
-    length_type edge_hits_edge_r1_eq(length_type x, void *params)
-    {   
+    static double edge_hits_edge_r1_eq(double x, void* params)
+    {                   
+        // Cast parameters into the right form
+        struct edge_hits_edge_eq_params* p = (struct edge_hits_edge_eq_params*) params;
+        // Unpack parameters
+        double  tan_scale_angle              = (p->tan_scale_angle);
+        double  scale_center_to_shell_edge_x = (p->scale_center_to_shell_edge_x);
+        double  scale_center_to_shell_y      = (p->scale_center_to_shell_y);
+        double  scale_center_to_shell_z      = (p->scale_center_to_shell_z);
+        double  otherShell_radius_sq         = (p->otherShell_radius_sq);
+        
         assert(tan_scale_angle != 0.0);
         
-        // Cast parameters into the right form
-        struct edge_hits_edge_eq_params *p = (struct edge_hits_edge_eq_params *) params;
-        // Unpack parameters
-        Real         tan_scale_angle  = p->tan_scale_angle;
-        length_type  scale_center_to_shell_edge_x = p->scale_center_to_shell_edge_x;
-        length_type  scale_center_to_shell_y = p->scale_center_to_shell_y;
-        length_type  scale_center_to_shell_z = p->scale_center_to_shell_z;
-        length_type  otherShell_radius_sq = p->otherShell_radius_sq;
+        printf("     tan_scale_angle              = %.20f\n", (double)tan_scale_angle);
+        printf("     scale_center_to_shell_edge_x = %.20f\n", (double)scale_center_to_shell_edge_x);
+        printf("     scale_center_to_shell_y      = %.20f\n", (double)scale_center_to_shell_y);
+        printf("     scale_center_to_shell_z      = %.20f\n", (double)scale_center_to_shell_z);
+        printf("     otherShell_radius_sq         = %.20f\n", (double)otherShell_radius_sq);
       
         // We will take the square root of the following below
-        length_type sqrt_arg( x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
+        double sqrt_arg( x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
               
         if(sqrt_arg < 0.0 && std::abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
 
@@ -575,7 +592,7 @@ class CylinderScalingHelperTools
               // FIXME Fix logging first!
 
         return (scale_center_to_shell_z - x/tan_scale_angle)*(scale_center_to_shell_z - x/tan_scale_angle) - otherShell_radius_sq
-               + (scale_center_to_shell_y - std::sqrt( sqrt_arg ) )*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
+                + (scale_center_to_shell_y - std::sqrt( sqrt_arg ) )*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
     };
                
     // (d) Now the function that handles the scaling for each collision situation specifically
@@ -669,7 +686,7 @@ class CylinderScalingHelperTools
                   if(scale_angle <= M_PI/4.0)
                   {                    
                    
-                    printf("C++: Entering rootfinding, scale_angle <= M_PI/4.0");  // TESTING
+                    printf("C++: Entering rootfinding, scale_angle <= M_PI/4.0 (finding h1)");  // TESTING
                     
                     // In this case there is no analytical solution, we have to use a rootfinder.
                     // To this purpuse we make use of the GSL Brent rootfinder.
@@ -704,7 +721,7 @@ class CylinderScalingHelperTools
                     solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
-                    printf("C++: Initializing rootfinder.\n");  // TESTING                                        
+                    printf("C++: Initializing rootfinder.\n");  // TESTING                        
                     gsl_root_fsolver_set(solver_ref, &F, h1_interval_min, h1_interval_max);
                     printf("C++: Starting rootfinder iteration.\n"); // TESTING
                     
@@ -793,7 +810,7 @@ class CylinderScalingHelperTools
                   }
                   else // if scale_angle > M_PI/4.0
                   {
-                    printf("C++: Entering rootfinding, scale_angle > M_PI/4.0\n");  // TESTING
+                    printf("C++: Entering rootfinding, scale_angle > M_PI/4.0 (finding r1)\n");  // TESTING
                     
                     // This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
                     // instead of h1; notice that scale_angle > 0 here, so we can divide by it
@@ -814,10 +831,20 @@ class CylinderScalingHelperTools
                                                           scale_center_to_shell_z,
                                                           otherShell_radius_sq
                                                         };
+                    printf("     scale_angle                  = %.20f\n", (double)scale_angle);
+                    printf("     tan_scale_angle              = %.20f\n", (double)tan_scale_angle);
+                    printf("     scale_center_to_shell_edge_x = %.20f\n", (double)scale_center_to_shell_edge_x);
+                    printf("     scale_center_to_shell_y      = %.20f\n", (double)scale_center_to_shell_y);
+                    printf("     scale_center_to_shell_z      = %.20f\n", (double)scale_center_to_shell_z);
+                    printf("     otherShell_radius_sq         = %.20f\n", (double)otherShell_radius_sq);
+                    printf("\n");                    
                                                         
                     // Pack function and parameters into the format required by GSL
-                    F.function = (double (*)(double, void*))(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq); // FIXME Is this cast working properly?
+                    F.function = &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq; // FIXME Is this cast working properly?
                     F.params = &p;
+                    
+                    // TESTING call
+                    (*edge_hits_edge_r1_eq_pt)(0.0, &p);
                     
                     // Set the iteration bounds
                     length_type r1_interval_min( scale_center_to_shell_edge_x );
@@ -828,7 +855,7 @@ class CylinderScalingHelperTools
                     solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
-                    printf("C++: Initializing rootfinder.\n");  // TESTING
+                    printf("C++: Initializing rootfinder.\n");  // TESTING                    
                     gsl_root_fsolver_set(solver_ref, &F, r1_interval_min, r1_interval_max);
                     printf("C++: Starting rootfinder iteration.\n"); // TESTING
                     
@@ -1144,6 +1171,10 @@ class CylinderScalingHelperTools
     scaling_function_pt_type z1_function[2];
     scaling_function_pt_type z2_function[2];
     
+    // Functions to feed into the rootfinder
+    gsl_function_pt_type edge_hits_edge_h1_eq_pt;
+    gsl_function_pt_type edge_hits_edge_r1_eq_pt;
+    
     // Important vectors and lengths used throughout the calculations
     // Local coordinate system in orthogonal scaling
     position_type       local_x, local_y, local_z;    
@@ -1178,8 +1209,8 @@ class CylinderScalingHelperTools
      scale_center_info(scale_center_info_), 
      scale_angle_info(scale_angle_info_)
     {
-         // Assign the scaling functions to the array for the two different directions
-         // direction = -1 (di = 0)
+         // Assign the scaling functions to the pointer arrays
+         // for the two different directions direction = -1 (di = 0)
          r1_function[0] = &CylinderScalingHelperTools<Ttraits_>::r_left;
          z1_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_left;
          z2_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_right;
@@ -1187,6 +1218,11 @@ class CylinderScalingHelperTools
          r1_function[1] = &CylinderScalingHelperTools<Ttraits_>::r_right;
          z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
          z2_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_left;
+         
+         // Assign pointers to the functions that are used to solve the implicit
+         // equation in the edge-hits-edge intersection case via the GSL rootfinder
+         edge_hits_edge_h1_eq_pt = ( double (*)(double, void*) )(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq);
+         edge_hits_edge_r1_eq_pt = ( double (*)(double, void*) )(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq);
          
          // Set direction index for addressing the above arrays
          di = (direction == 1) ? 1 : 0;
