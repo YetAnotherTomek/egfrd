@@ -35,9 +35,6 @@
 
 
 
-/*** LOGGER ***/        // FIXME
-//Logger& loclog_(Logger::get_logger("ecell.CylinderScaling"));
-
 
 // Declare a base class with bogus scaling methods which will
 // be overridden in Python via a derived class
@@ -111,9 +108,11 @@ class CylinderScalingFunctionsWrap : public CylinderScalingFunctions<Ttraits_>
 
 struct edge_hits_edge_eq_params
 {
-    Real         tan_scale_angle;
-    length_type  scale_center_to_shell_edge_x, scale_center_to_shell_y, scale_center_to_shell_z;
-    length_type  otherShell_radius_sq;
+    double        tan_scale_angle;
+    double        scale_center_to_shell_edge_x;
+    double        scale_center_to_shell_y;
+    double        scale_center_to_shell_z;
+    double        otherShell_radius_sq;
 };
 
     
@@ -548,12 +547,12 @@ class CylinderScalingHelperTools
         length_type sqrt_arg( (x*tan_scale_angle)*(x*tan_scale_angle) - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
 
         if(sqrt_arg < 0.0 && std::abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
-
+        {
                 sqrt_arg = 0.0;     // This safety check is to prevent math domain errors
                                     // in case sqrt_arg is close to zero and taking the
                                     // difference results in very small negative numbers
-                // log.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.")
-                // FIXME Fix logging first!
+                log_.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.");
+        }
                           
         return (scale_center_to_shell_z - x)*(scale_center_to_shell_z - x) - otherShell_radius_sq 
                 + (scale_center_to_shell_y - std::sqrt( sqrt_arg ))*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
@@ -574,22 +573,22 @@ class CylinderScalingHelperTools
         
         assert(tan_scale_angle != 0.0);
         
-        printf("     tan_scale_angle              = %.20f\n", (double)tan_scale_angle);
-        printf("     scale_center_to_shell_edge_x = %.20f\n", (double)scale_center_to_shell_edge_x);
-        printf("     scale_center_to_shell_y      = %.20f\n", (double)scale_center_to_shell_y);
-        printf("     scale_center_to_shell_z      = %.20f\n", (double)scale_center_to_shell_z);
-        printf("     otherShell_radius_sq         = %.20f\n", (double)otherShell_radius_sq);
+        log_.info("     tan_scale_angle              = %.20f\n", (double)tan_scale_angle);
+        log_.info("     scale_center_to_shell_edge_x = %.20f\n", (double)scale_center_to_shell_edge_x);
+        log_.info("     scale_center_to_shell_y      = %.20f\n", (double)scale_center_to_shell_y);
+        log_.info("     scale_center_to_shell_z      = %.20f\n", (double)scale_center_to_shell_z);
+        log_.info("     otherShell_radius_sq         = %.20f\n", (double)otherShell_radius_sq);
       
         // We will take the square root of the following below
         double sqrt_arg( x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
               
         if(sqrt_arg < 0.0 && std::abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
-
+        {
               sqrt_arg = 0.0;     // This safety check is to prevent math domain errors
                                   // in case sqrt_arg is close to zero and taking the
                                   // difference results in very small negative numbers
-              // log.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.")
-              // FIXME Fix logging first!
+              log_.warn("Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.");
+        }
 
         return (scale_center_to_shell_z - x/tan_scale_angle)*(scale_center_to_shell_z - x/tan_scale_angle) - otherShell_radius_sq
                 + (scale_center_to_shell_y - std::sqrt( sqrt_arg ) )*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
@@ -605,6 +604,8 @@ class CylinderScalingHelperTools
       // Some commonly used values
       length_type otherShell_radius_sq( otherShell_radius*otherShell_radius );
       
+      log_.info("C++: Handling specific collision situation...");  // TESTING
+      
       switch(collision_situation)
       {
             
@@ -618,6 +619,7 @@ class CylinderScalingHelperTools
           
           case EDGE_HITS_EDGE:
           {      
+              log_.info("C++: Entering EDGE_HITS_EDGE case...");  // TESTING
               // the scaling cylinder ('testShell') hits the edge of 'otherShell' with its edge
               // TODO we have a solution but it can only be found with a root finder -> slow
               
@@ -686,7 +688,7 @@ class CylinderScalingHelperTools
                   if(scale_angle <= M_PI/4.0)
                   {                    
                    
-                    printf("C++: Entering rootfinding, scale_angle <= M_PI/4.0 (finding h1)");  // TESTING
+                    log_.info("C++: Entering rootfinding, scale_angle <= M_PI/4.0 (finding h1)");  // TESTING
                     
                     // In this case there is no analytical solution, we have to use a rootfinder.
                     // To this purpuse we make use of the GSL Brent rootfinder.
@@ -721,9 +723,9 @@ class CylinderScalingHelperTools
                     solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
-                    printf("C++: Initializing rootfinder.\n");  // TESTING                        
+                    log_.info("C++: Initializing rootfinder.\n");  // TESTING                        
                     gsl_root_fsolver_set(solver_ref, &F, h1_interval_min, h1_interval_max);
-                    printf("C++: Starting rootfinder iteration.\n"); // TESTING
+                    log_.info("C++: Starting rootfinder iteration.\n"); // TESTING
                     
                     do
                     {
@@ -737,7 +739,7 @@ class CylinderScalingHelperTools
                         if (rf_status == GSL_SUCCESS)
                               printf ("Converged:\n");
                   
-                        printf ("Iteration %4d of %4d: [%.7f, %.7f] %.7f %.7f\n",
+                        log_.info("Iteration %4d of %4d: [%.7f, %.7f] %.7f %.7f\n",
                                 iter, max_iter, lo, hi, root, hi - lo);
                     }
                     while (rf_status == GSL_CONTINUE && iter < max_iter);
@@ -810,7 +812,7 @@ class CylinderScalingHelperTools
                   }
                   else // if scale_angle > M_PI/4.0
                   {
-                    printf("C++: Entering rootfinding, scale_angle > M_PI/4.0 (finding r1)\n");  // TESTING
+                    log_.info("C++: Entering rootfinding, scale_angle > M_PI/4.0 (finding r1)\n");  // TESTING
                     
                     // This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
                     // instead of h1; notice that scale_angle > 0 here, so we can divide by it
@@ -831,13 +833,13 @@ class CylinderScalingHelperTools
                                                           scale_center_to_shell_z,
                                                           otherShell_radius_sq
                                                         };
-                    printf("     scale_angle                  = %.20f\n", (double)scale_angle);
-                    printf("     tan_scale_angle              = %.20f\n", (double)tan_scale_angle);
-                    printf("     scale_center_to_shell_edge_x = %.20f\n", (double)scale_center_to_shell_edge_x);
-                    printf("     scale_center_to_shell_y      = %.20f\n", (double)scale_center_to_shell_y);
-                    printf("     scale_center_to_shell_z      = %.20f\n", (double)scale_center_to_shell_z);
-                    printf("     otherShell_radius_sq         = %.20f\n", (double)otherShell_radius_sq);
-                    printf("\n");                    
+                    log_.info("     scale_angle                  = %.20f\n", (double)scale_angle);
+                    log_.info("     tan_scale_angle              = %.20f\n", (double)tan_scale_angle);
+                    log_.info("     scale_center_to_shell_edge_x = %.20f\n", (double)scale_center_to_shell_edge_x);
+                    log_.info("     scale_center_to_shell_y      = %.20f\n", (double)scale_center_to_shell_y);
+                    log_.info("     scale_center_to_shell_z      = %.20f\n", (double)scale_center_to_shell_z);
+                    log_.info("     otherShell_radius_sq         = %.20f\n", (double)otherShell_radius_sq);
+                    log_.info("\n");
                                                         
                     // Pack function and parameters into the format required by GSL
                     F.function = &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq; // FIXME Is this cast working properly?
@@ -855,9 +857,9 @@ class CylinderScalingHelperTools
                     solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
-                    printf("C++: Initializing rootfinder.\n");  // TESTING                    
+                    log_.info("C++: Initializing rootfinder.\n");  // TESTING                    
                     gsl_root_fsolver_set(solver_ref, &F, r1_interval_min, r1_interval_max);
-                    printf("C++: Starting rootfinder iteration.\n"); // TESTING
+                    log_.info("C++: Starting rootfinder iteration.\n"); // TESTING
                     
                     do
                     {
@@ -869,9 +871,9 @@ class CylinderScalingHelperTools
                         rf_status = gsl_root_test_interval(lo, hi, 0, 0.001); // arg. 3 is absolute error, arg. 4 relative error of the found root
                   
                         if (rf_status == GSL_SUCCESS)
-                              printf ("Converged:\n");
+                              log_.info ("Converged:\n");
                   
-                        printf ("Iteration %4d of %4d: [%.7f, %.7f] %.7f %.7f\n",
+                        log_.info("Iteration %4d of %4d: [%.7f, %.7f] %.7f %.7f\n",
                                 iter, max_iter, lo, hi, root, hi - lo);
                     }
                     while (rf_status == GSL_CONTINUE && iter < max_iter);
@@ -1185,6 +1187,8 @@ class CylinderScalingHelperTools
     
     length_type         r1_min, h1_min; // used in rootfinder routine in EDGE_HITS_EDGE case
     
+    static Logger&      log_;
+    
     
   public:       // CONSTRUCTOR
     
@@ -1255,7 +1259,9 @@ class CylinderScalingHelperTools
 
 
 
-
+/*** LOGGER ***/
+template<typename Ttraits_>
+Logger& CylinderScalingHelperTools<Ttraits_>::log_(Logger::get_logger("ecell.CylinderScalingHelperTools"));
 
 
 
