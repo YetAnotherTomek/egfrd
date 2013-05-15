@@ -927,6 +927,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
                                     direction, scale_center_info, scale_angle_info
                                    )
 
+    log.info("Calculating new shell dimensions in C++ ...")
     scaled_r_z1_z2 = HT.get_dr_dzright_dzleft_to_CylindricalShape()
     #scaled_r_z1_z2 = [0,0,0] # for TESTING, to deactivate
     r_new_c  = scaled_r_z1_z2[0]
