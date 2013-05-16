@@ -742,8 +742,8 @@ class CylinderScalingHelperTools
                     
                     // TESTING call
                     log_.info("C++: Rootfinder function test call:");
-                    //(*F.function)(1000000.0, &p);
-                    //(*F.function)(1000000.0, F.params);
+                    (*F.function)(1000000.0, &p);
+                    (*F.function)(1000000.0, F.params);
                     
                     // Set the iteration bounds
                     length_type h1_interval_min( (this->*z1_function[di])(scale_center_to_shell_edge_x) - scale_center_z );
@@ -855,12 +855,7 @@ class CylinderScalingHelperTools
                                                         
                     // Pack function and parameters into the format required by GSL
                     F.function = reinterpret_cast<typeof(F.function)>( &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq );
-                    F.params = &p;
-                    
-                    // TESTING call
-                    log_.info("C++: Rootfinder function test call:");
-                    (*F.function)(1000000.0, &p);
-                    (*F.function)(1000000.0, F.params);
+                    F.params = &p;                    
                     
                     // Set the iteration bounds
                     length_type r1_interval_min( scale_center_to_shell_edge_x );
@@ -1126,26 +1121,19 @@ class CylinderScalingHelperTools
         angle_type to_edge_angle( std::atan( (scale_center_to_shell_r - otherShell_radius) / 
                                                  (scale_center_to_shell_z - otherShell_hl)
                                            ) );
-        log_.info("C++: to_edge_angle=%.6e, scale_center_to_shell_r=%.6e, scale_center_to_shell_z=%.6e, otherShell_radius=%.6e, otherShell_hl=%.6e", 
-                      to_edge_angle, scale_center_to_shell_r, scale_center_to_shell_z, otherShell_radius, otherShell_hl);
 
         if(scale_center_to_shell_z - otherShell_hl < 0.0 )
         {
-            log_.info("Adding M_PI..");
             to_edge_angle += M_PI;      // if the shell was too much to the side we correct the angle to be positive
         // elif: a negative angle was caused by a negative scale_center_to_shell we want a negative angle -> do nothing
         // otherwise: shell_angle is ok -> do nothing
         }
 
-        log_.info("C++: to_edge_angle=%.6e, scale_angle=%.6e", to_edge_angle, scale_angle);
         if(to_edge_angle <= scale_angle)
         {   // otherShell collides with the scaling cylinder ('testShell') on top
-            log_.info("C++: to_edge_angle <= scale_angle");
             z1_new = std::min(z1, (ref_to_shell_z_d - otherShell_hl) );
             r_new  = std::min(r,  (this->*r1_function[this->di])(z1_new) );
                      // TODO if z1 hasn't changed we also don't have to recalculate this
-            log_.info("z1=%.6e, ref_to_shell_z_d=%.6e, otherShell_hl=%.6e", z1, ref_to_shell_z_d, otherShell_hl);
-            log_.info("r=%.6e, z1_new=%.6e, r_new=%.6e", r, z1_new, r_new);
         }
         else
         {   // otherShell collides with the scaling cylinder ('testShell') on the radial side

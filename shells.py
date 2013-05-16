@@ -957,26 +957,18 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         scale_center_to_shell_z = ref_to_shell_z - scale_center_z
 
         # get angles
-        to_edge_angle = math.atan( (scale_center_to_shell_r - shell_radius) / (scale_center_to_shell_z - shell_half_length) )
-        log.info("to_edge_angle=%s, scale_center_to_shell_r=%s. scale_center_to_shell_z=%s, shell_radius=%s, shell_half_length=%s" % \
-                    (to_edge_angle, scale_center_to_shell_r, scale_center_to_shell_z, shell_radius, shell_half_length) )
+        to_edge_angle = math.atan( (scale_center_to_shell_r - shell_radius) / (scale_center_to_shell_z - shell_half_length) )        
 
         if (scale_center_to_shell_z - shell_half_length) < 0.0:
-            log.info("Python: adding Pi")
             to_edge_angle += Pi           # if the shell was too much to the side we correct the angle to be positive
         # elif: a negative angle was caused by a negative scale_center_to_shell we want a negative angle -> do nothing
         # otherwise: shell_angle is ok -> do nothing
 
-        log.info("to_edge_angle=%s, scale_angle=%s" % (to_edge_angle, scale_angle) )
         if to_edge_angle <= scale_angle:
-            log.info("Python: to_edge_angle <= scale_angle")
             # shell hits the scaling cylinder on top
             z1_new = min(z1, (ref_to_shell_z - shell_half_length))
             r_new  = min(r,  r1_function(z1_new))           # TODO if z1 hasn't changed we also don't have to recalculate this
-            log.info("z1=%s, ref_to_shell_z=%s, shell_half_length=%s" % (z1, ref_to_shell_z, shell_half_length) )
-            log.info("r=%s, z1_new=%s, r_new=%s" % (r, z1_new, r_new) )
         else:
-            log.info("Python: to_edge_angle > scale_angle")
             # shell hits the scaling cylinder on the radial side
             r_new = min(r, (ref_to_shell_r - shell_radius))
             z1_new = min(z1, z1_function(r_new))
