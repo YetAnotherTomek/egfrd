@@ -891,7 +891,7 @@ class CylinderScalingHelperTools
                     while (rf_status == GSL_CONTINUE && iter < max_iter);                
                     
                     // Finally, assemble the solution; z1_new and r_new will be passed back by this function further below                    
-                    r_new  = root;
+                    r_new  = std::min(r, root);
                     z1_new = std::min(z1, (this->*z1_function[di])(r_new));
                     log_.info("C++: Result after rootfinding: r_new=%.7f, z1_new=%.7f", r_new, z1_new);
                     
