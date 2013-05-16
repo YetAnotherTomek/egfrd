@@ -531,7 +531,7 @@ class CylinderScalingHelperTools
     // The associated helper scaling functions and a common parameter holder are defined first here:   
     
     // (a) Helper function to find h1 as a function of r1 in edge_hits_edge scaling
-    length_type edge_hits_edge_h1_eq(length_type x, void* params)
+    static length_type edge_hits_edge_h1_eq(length_type x, void* params)
     {
         log_.info("     FROM h1 FUNCTION:");
         // Cast parameters into the right form
@@ -539,7 +539,6 @@ class CylinderScalingHelperTools
         // Unpack parameters
         log_.info("     Unpacking...");
         Real         tan_scale_angle              = (p->tan_scale_angle);
-        log_.info("     Unpacking...");
         length_type  scale_center_to_shell_edge_x = (p->scale_center_to_shell_edge_x);
         length_type  scale_center_to_shell_y      = (p->scale_center_to_shell_y);
         length_type  scale_center_to_shell_z      = (p->scale_center_to_shell_z);
@@ -735,13 +734,13 @@ class CylinderScalingHelperTools
                     log_.info("C++: Entering rootfinding, scale_angle <= M_PI/4.0 (finding h1)");  // TESTING
                                                                             
                     // Pack function and parameters into the format required by GSL
-                    F.function = (gsl_function_pt_type)(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq); // FIXME Is this cast working properly?
+                    F.function = reinterpret_cast<typeof(F.function)>( &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq );
                     F.params = &p;
                     
                     // TESTING call
                     log_.info("C++: Rootfinder function test call:");
-                    (*F.function)(1000000.0, &p);
-                    (*F.function)(1000000.0, F.params);
+                    //(*F.function)(1000000.0, &p);
+                    //(*F.function)(1000000.0, F.params);
                     
                     // Set the iteration bounds
                     length_type h1_interval_min( (this->*z1_function[di])(scale_center_to_shell_edge_x) - scale_center_z );
@@ -849,7 +848,7 @@ class CylinderScalingHelperTools
                     log_.info("C++: Entering rootfinding, scale_angle > M_PI/4.0 (finding r1)");  // TESTING                                        
                                                         
                     // Pack function and parameters into the format required by GSL
-                    F.function = (gsl_function_pt_type)(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq); // FIXME Is this cast working properly?
+                    F.function = reinterpret_cast<typeof(F.function)>( &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq );
                     F.params = &p;
                     
                     // TESTING call
