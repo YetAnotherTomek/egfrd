@@ -1546,9 +1546,10 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
 
 
     # Print a comparison between the old (Python-based) and new (C++-based) results
-    log.info("SHELLSCALING COMPARISON:")
-    log.info("Python : r_new = %s, z1_new = %s, z2_new = %s" % (r_new, z1_new, z2_new) )
-    log.info("C++    : r_new = %s, z1_new = %s, z2_new = %s" % (r_new_c, z1_new_c, z2_new_c) )
+    if r_new != r_new_c or z1_new != z1_new_c or z2_new != z2_new_c:
+        log.warn("SHELLSCALING COMPARISON NOT MACHING!")
+        log.warn("Python : r_new = %s, z1_new = %s, z2_new = %s" % (r_new, z1_new, z2_new) )
+        log.warn("C++    : r_new = %s, z1_new = %s, z2_new = %s" % (r_new_c, z1_new_c, z2_new_c) )
 
     # switch the z values in case it's necessary. r doesn't have to be switched.
     r = r_new

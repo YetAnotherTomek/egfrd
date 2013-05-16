@@ -177,8 +177,7 @@ class CylinderScalingHelperTools
         
         else
           log_.warn("Shells seem neither parallel nor orthogonal in CylindricaltestShell scaling routine: relative_orientation = %.6e", relative_orientation);
-          //throw unsupported("Shells are neither parallel nor orthogonal in CylindricaltestShell scaling routine."); // FIXME
-        
+          //throw unsupported("Shells are neither parallel nor orthogonal in CylindricaltestShell scaling routine."); // FIXME        
     };
     
     // TESTING methods; to test whether scaling functions passed to this class
@@ -1041,10 +1040,9 @@ class CylinderScalingHelperTools
               if( scale_center_shell_dist > std::sqrt(scale_center_to_shell_y*scale_center_to_shell_y 
                                                       + scale_center_to_shell_z*scale_center_to_shell_z) * (1.0+TOLERANCE) )
               {
-        //                 log.warn("Orthogonal cylinder scaling, EDGE_HITS_BARREL case: scale-center-to-shell distance is out of foreseen bounds:");
-        //                 log.warn("   distance=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s",
-        //                              scale_center_shell_dist, scale_center_to_shell_y, scale_center_to_shell_z);
-                      ; // FIXME fix logger first!
+                         log_.warn("Orthogonal cylinder scaling, EDGE_HITS_BARREL case: scale-center-to-shell distance is out of foreseen bounds:");
+                         log_.warn("   distance=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s",
+                                          scale_center_shell_dist, scale_center_to_shell_y, scale_center_to_shell_z);
               }
 
               if(scale_angle <= M_PI/4.0)
