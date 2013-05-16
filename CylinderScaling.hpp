@@ -519,6 +519,9 @@ class CylinderScalingHelperTools
             }
       }
       
+      if(collision_situation == UNDETERMINED)
+          log_.warn("UNDETERMINED collision situation in orthogonal cylinder scaling routine!");
+        
       return collision_situation;
       
     };
@@ -613,7 +616,7 @@ class CylinderScalingHelperTools
       // Some commonly used values
       length_type otherShell_radius_sq( otherShell_radius*otherShell_radius );
       
-      log_.info("C++: Handling specific collision situation...");  // TESTING
+      log_.info("C++: Handling specific collision in orthogonal cylinder scaling...");  // TESTING
       
       switch(collision_situation)
       {
@@ -763,6 +766,9 @@ class CylinderScalingHelperTools
                     do
                     {
                         iter++;
+                        if(iter == max_iter)
+                            log_.warn("Reached maximal no. of rootfinder iterations (= %u) in EDGE_HITS_EDGE cylinder scaling withoug converging!", max_iter);
+                        
                         rf_status = gsl_root_fsolver_iterate(solver_ref);
                         root = gsl_root_fsolver_root(solver_ref);
                         lo   = gsl_root_fsolver_x_lower(solver_ref);
@@ -876,6 +882,9 @@ class CylinderScalingHelperTools
                     do
                     {
                         iter++;
+                        if(iter == max_iter)
+                            log_.warn("Reached maximal no. of rootfinder iterations (= %u) in EDGE_HITS_EDGE cylinder scaling withoug converging!", max_iter);
+                        
                         rf_status = gsl_root_fsolver_iterate(solver_ref);
                         root = gsl_root_fsolver_root(solver_ref);
                         lo   = gsl_root_fsolver_x_lower(solver_ref);
@@ -1095,6 +1104,8 @@ class CylinderScalingHelperTools
     {
         // Calculates the new testShell dimensions when scaled with respect
         // to another shell that is parallel in orientation
+        
+        log_.info("C++: Handling parallel cylinder collision...");  // TESTING
         
         length_type r_new(r), z1_new(z1), z2_new(z2); // TODO what happens with z2_new?
         
