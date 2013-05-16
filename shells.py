@@ -944,7 +944,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     if feq(relative_orientation, 1.0):
     #### If the cylinders are parallel ####
 
-        log.info("Python: Scaling parallel cylinders")
+        #log.info("Python: Scaling parallel cylinders")
         # calculate ref_to_shell_r/z in the cylindrical coordinate system on the right/left side
         ref_to_shell_z_vec = ref_to_shell_z * orientation_vector
         ref_to_shell_r_vec = ref_to_shell_vec - ref_to_shell_z_vec
@@ -1226,10 +1226,10 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
                     h1_min = r1_min/tan_scale_angle
 
         ##TODO TESTING Debug info
-        log.info("  *** QUADRANT = %s ***" % str(quadrant) )
-        log.info("  *** Situation = %s" % str(situation_string[situation]) )
-        log.info("  *** testShell=%s, r=%s, z1=%s" % (str(testShell), r, z1) )
-        log.info("  *** scale_angle=%s, tan_scale_angle=%s, scale_center_z=%s, scale_center_r=%s" % (scale_angle, tan_scale_angle, scale_center_z, scale_center_r) )
+        #log.info("  *** QUADRANT = %s ***" % str(quadrant) )
+        #log.info("  *** Situation = %s" % str(situation_string[situation]) )
+        #log.info("  *** testShell=%s, r=%s, z1=%s" % (str(testShell), r, z1) )
+        #log.info("  *** scale_angle=%s, tan_scale_angle=%s, scale_center_z=%s, scale_center_r=%s" % (scale_angle, tan_scale_angle, scale_center_z, scale_center_r) )
         #log.info("  *** shell_radius=%s, shell_half_length=%s" % (shell_radius, shell_half_length) )
         #log.info("  *** ref_to_shell_x=%s, ref_to_shell_y=%s, ref_to_shell_z=%s" % (ref_to_shell_x, ref_to_shell_y, ref_to_shell_z) )
         #log.info("  *** scale_center_to_shell_x=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s" % (scale_center_to_shell_x, scale_center_to_shell_y, scale_center_to_shell_z) )
@@ -1546,7 +1546,9 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
 
 
     # Print a comparison between the old (Python-based) and new (C++-based) results
-    if r_new != r_new_c or z1_new != z1_new_c or z2_new != z2_new_c:
+    if abs( (r_new-r_new_c)/r_new_c ) > 0.01 or abs( (z1_new-z1_new_c)/z1_new_c ) > 0.01 or abs( (z2_new-z2_new_c)/z2_new_c ) > 0.01 \
+    or abs( (r_new-r_new_c)/r_new )   > 0.01 or abs( (z1_new-z1_new_c)/z1_new )   > 0.01 or abs( (z2_new-z2_new_c)/z2_new )   > 0.01 :
+
         log.warn("SHELLSCALING COMPARISON NOT MACHING!")
         log.warn("Python : r_new = %s, z1_new = %s, z2_new = %s" % (r_new, z1_new, z2_new) )
         log.warn("C++    : r_new = %s, z1_new = %s, z2_new = %s" % (r_new_c, z1_new_c, z2_new_c) )

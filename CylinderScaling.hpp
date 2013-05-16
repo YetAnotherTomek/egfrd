@@ -535,22 +535,21 @@ class CylinderScalingHelperTools
     // (a) Helper function to find h1 as a function of r1 in edge_hits_edge scaling
     static length_type edge_hits_edge_h1_eq(length_type x, void* params)
     {
-        log_.info("     FROM h1 FUNCTION:");
+        // log_.info("     FROM h1 FUNCTION:");
         // Cast parameters into the right form
         struct edge_hits_edge_eq_params<Ttraits_>* p = (struct edge_hits_edge_eq_params<Ttraits_>*) params;
         // Unpack parameters
-        log_.info("     Unpacking...");
         Real         tan_scale_angle              = (p->tan_scale_angle);
         length_type  scale_center_to_shell_edge_x = (p->scale_center_to_shell_edge_x);
         length_type  scale_center_to_shell_y      = (p->scale_center_to_shell_y);
         length_type  scale_center_to_shell_z      = (p->scale_center_to_shell_z);
         length_type  otherShell_radius_sq         = (p->otherShell_radius_sq);
                 
-        log_.info("     tan_scale_angle              = %.20f", tan_scale_angle);
-        log_.info("     scale_center_to_shell_edge_x = %.20f", scale_center_to_shell_edge_x);
-        log_.info("     scale_center_to_shell_y      = %.20f", scale_center_to_shell_y);
-        log_.info("     scale_center_to_shell_z      = %.20f", scale_center_to_shell_z);
-        log_.info("     otherShell_radius_sq         = %.20f", otherShell_radius_sq);
+//         log_.info("     tan_scale_angle              = %.20f", tan_scale_angle);
+//         log_.info("     scale_center_to_shell_edge_x = %.20f", scale_center_to_shell_edge_x);
+//         log_.info("     scale_center_to_shell_y      = %.20f", scale_center_to_shell_y);
+//         log_.info("     scale_center_to_shell_z      = %.20f", scale_center_to_shell_z);
+//         log_.info("     otherShell_radius_sq         = %.20f", otherShell_radius_sq);
       
         // We will take the square root of the following below
         Real sqrt_arg( (x*tan_scale_angle)*(x*tan_scale_angle) - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
@@ -571,11 +570,10 @@ class CylinderScalingHelperTools
     // Very similar, but in a crucial part different from edge_hits_edge_h1_eq() defined above
     static length_type edge_hits_edge_r1_eq(length_type x, void* params)
     {   
-        log_.info("     FROM r1 FUNCTION:");
+        // log_.info("     FROM r1 FUNCTION:");
         // Cast parameters into the right form
         struct edge_hits_edge_eq_params<Ttraits_>* p = (struct edge_hits_edge_eq_params<Ttraits_>*) params;        
         // Unpack parameters
-        log_.info("     Unpacking...");
         Real         tan_scale_angle              = (p->tan_scale_angle);
         length_type  scale_center_to_shell_edge_x = (p->scale_center_to_shell_edge_x);
         length_type  scale_center_to_shell_y      = (p->scale_center_to_shell_y);
@@ -584,11 +582,11 @@ class CylinderScalingHelperTools
         
         assert(tan_scale_angle != 0.0);
                 
-        log_.info("     tan_scale_angle              = %.20f", tan_scale_angle);
-        log_.info("     scale_center_to_shell_edge_x = %.20f", scale_center_to_shell_edge_x);
-        log_.info("     scale_center_to_shell_y      = %.20f", scale_center_to_shell_y);
-        log_.info("     scale_center_to_shell_z      = %.20f", scale_center_to_shell_z);
-        log_.info("     otherShell_radius_sq         = %.20f", otherShell_radius_sq);
+//         log_.info("     tan_scale_angle              = %.20f", tan_scale_angle);
+//         log_.info("     scale_center_to_shell_edge_x = %.20f", scale_center_to_shell_edge_x);
+//         log_.info("     scale_center_to_shell_y      = %.20f", scale_center_to_shell_y);
+//         log_.info("     scale_center_to_shell_z      = %.20f", scale_center_to_shell_z);
+//         log_.info("     otherShell_radius_sq         = %.20f", otherShell_radius_sq);
       
         // We will take the square root of the following below
         Real sqrt_arg( x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x );
@@ -630,7 +628,6 @@ class CylinderScalingHelperTools
           
           case EDGE_HITS_EDGE:
           {      
-              log_.info("C++: Entering EDGE_HITS_EDGE case...");  // TESTING
               // the scaling cylinder ('testShell') hits the edge of 'otherShell' with its edge
               // TODO we have a solution but it can only be found with a root finder -> slow
               
@@ -705,7 +702,7 @@ class CylinderScalingHelperTools
                   // To this purpuse we make use of the GSL Brent rootfinder.
 
                   // Construct a rootfinder instance based on the function defined above                  
-                  log_.info("C++: Defining rootfinder and parameter structure");  // TESTING
+                  // log_.info("C++: Defining rootfinder and parameter structure");  // TESTING
                   const gsl_root_fsolver_type* solver;
                   gsl_root_fsolver* solver_ref;
                   int rf_status;
@@ -721,13 +718,13 @@ class CylinderScalingHelperTools
                                                            scale_center_to_shell_z,
                                                            otherShell_radius_sq
                                                          };
-                  log_.info("     PARAMETERS STRUCTURE:"); // TESTING
-                  log_.info("     scale_angle                  = %.20f", (double)scale_angle);
-                  log_.info("     tan_scale_angle              = %.20f", (double)tan_scale_angle);
-                  log_.info("     scale_center_to_shell_edge_x = %.20f", (double)scale_center_to_shell_edge_x);
-                  log_.info("     scale_center_to_shell_y      = %.20f", (double)scale_center_to_shell_y);
-                  log_.info("     scale_center_to_shell_z      = %.20f", (double)scale_center_to_shell_z);
-                  log_.info("     otherShell_radius_sq         = %.20f", (double)otherShell_radius_sq);
+//                   log_.info("     PARAMETERS STRUCTURE:"); // TESTING
+//                   log_.info("     scale_angle                  = %.20f", (double)scale_angle);
+//                   log_.info("     tan_scale_angle              = %.20f", (double)tan_scale_angle);
+//                   log_.info("     scale_center_to_shell_edge_x = %.20f", (double)scale_center_to_shell_edge_x);
+//                   log_.info("     scale_center_to_shell_y      = %.20f", (double)scale_center_to_shell_y);
+//                   log_.info("     scale_center_to_shell_z      = %.20f", (double)scale_center_to_shell_z);
+//                   log_.info("     otherShell_radius_sq         = %.20f", (double)otherShell_radius_sq);
                     
                   
                   if(scale_angle <= M_PI/4.0)
@@ -737,12 +734,7 @@ class CylinderScalingHelperTools
                                                                             
                     // Pack function and parameters into the format required by GSL
                     F.function = reinterpret_cast<typeof(F.function)>( &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq );
-                    F.params = &p;
-                    
-                    // TESTING call
-                    log_.info("C++: Rootfinder function test call:");
-                    (*F.function)(1000000.0, &p);
-                    (*F.function)(1000000.0, F.params);
+                    F.params = &p;                   
                     
                     // Set the iteration bounds
                     length_type h1_interval_min( (this->*z1_function[di])(scale_center_to_shell_edge_x) - scale_center_z );
@@ -756,10 +748,10 @@ class CylinderScalingHelperTools
                     solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
-                    log_.info("C++: Initializing rootfinder.");  // TESTING                        
+                    //log_.info("C++: Initializing rootfinder.");  // TESTING                        
                     gsl_root_fsolver_set(solver_ref, &F, h1_interval_min, h1_interval_max);
                     
-                    log_.info("C++: Starting rootfinder iteration."); // TESTING                    
+                    //log_.info("C++: Starting rootfinder iteration."); // TESTING                    
                     root = z1;
                     iter = 0;
                     do
@@ -774,11 +766,11 @@ class CylinderScalingHelperTools
                         hi   = gsl_root_fsolver_x_upper(solver_ref);
                         rf_status = gsl_root_test_interval(lo, hi, 0, 0.001); // arg. 3 is absolute error, arg. 4 relative error of the found root
                   
-                        if (rf_status == GSL_SUCCESS)
-                              log_.info ("     Converged:");
-                  
-                        log_.info("     Iteration %4d of %4d: bounds=[%.6e, %.6e], value=%.6e, error=%.6e",
-                                                  iter, max_iter, lo, hi, root, hi - lo);
+//                         if (rf_status == GSL_SUCCESS)
+//                               log_.info ("     Converged:");
+//                   
+//                         log_.info("     Iteration %4d of %4d: bounds=[%.6e, %.6e], value=%.6e, error=%.6e",
+//                                                   iter, max_iter, lo, hi, root, hi - lo);
                     }
                     while (rf_status == GSL_CONTINUE && iter < max_iter);                                    
                     
@@ -867,10 +859,10 @@ class CylinderScalingHelperTools
                     solver     = gsl_root_fsolver_brent;
                     solver_ref = gsl_root_fsolver_alloc(solver);
                     // Initialize
-                    log_.info("C++: Initializing rootfinder.");  // TESTING
+                    //log_.info("C++: Initializing rootfinder.");  // TESTING
                     gsl_root_fsolver_set(solver_ref, &F, r1_interval_min, r1_interval_max);
                     
-                    log_.info("C++: Starting rootfinder iteration."); // TESTING
+                    //log_.info("C++: Starting rootfinder iteration."); // TESTING
                     root = r;
                     iter = 0;
                     do
@@ -885,18 +877,18 @@ class CylinderScalingHelperTools
                         hi   = gsl_root_fsolver_x_upper(solver_ref);
                         rf_status = gsl_root_test_interval(lo, hi, 0, 0.001); // arg. 3 is absolute error, arg. 4 relative error of the found root
                   
-                        if (rf_status == GSL_SUCCESS)
-                              log_.info ("     Converged:");
-                  
-                        log_.info("     Iteration %4d of %4d: bounds=[%.6e, %.6e], value=%.6e, error=%.6e",
-                                                  iter, max_iter, lo, hi, root, hi - lo);
+//                         if (rf_status == GSL_SUCCESS)
+//                               log_.info ("     Converged:");
+//                   
+//                         log_.info("     Iteration %4d of %4d: bounds=[%.6e, %.6e], value=%.6e, error=%.6e",
+//                                                   iter, max_iter, lo, hi, root, hi - lo);
                     }
                     while (rf_status == GSL_CONTINUE && iter < max_iter);                
                     
                     // Finally, assemble the solution; z1_new and r_new will be passed back by this function further below                    
                     r_new  = std::min(r, root);
                     z1_new = std::min(z1, (this->*z1_function[di])(r_new));
-                    log_.info("C++: Result after rootfinding: r_new=%.6e, z1_new=%.6e", r_new, z1_new);
+                    //log_.info("C++: Result after rootfinding: r_new=%.6e, z1_new=%.6e", r_new, z1_new);
                     
                     // Cleanup
                     gsl_root_fsolver_free(solver_ref);
