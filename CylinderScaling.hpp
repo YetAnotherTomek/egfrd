@@ -169,10 +169,10 @@ class CylinderScalingHelperTools
         
         length_type relative_orientation( dot_product(testShell_orientation_vector, otherShell_orientation_vector) );
         
-        if( abs(feq(relative_orientation, 1.0, 1e-3 )) )
+        if( feq( abs(relative_orientation), 1.0, 1e-3 ) )
           return get_dr_dzright_dzleft_to_parallel_CylindricalShape();
         
-        else if( abs(feq(relative_orientation, 0.0, 1e-3 )) )
+        else if( feq( abs(relative_orientation), 0.0, 1e-3 ) )
           return get_dr_dzright_dzleft_to_orthogonal_CylindricalShape();
         
         else
