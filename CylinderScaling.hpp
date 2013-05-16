@@ -176,7 +176,7 @@ class CylinderScalingHelperTools
           return get_dr_dzright_dzleft_to_orthogonal_CylindricalShape();
         
         else
-          log_.warn("Shells seem neither parallel nor orthogonal in CylindricaltestShell scaling routine: relative_orientation = %.7f", relative_orientation);
+          log_.warn("Shells seem neither parallel nor orthogonal in CylindricaltestShell scaling routine: relative_orientation = %.6e", relative_orientation);
           //throw unsupported("Shells are neither parallel nor orthogonal in CylindricaltestShell scaling routine."); // FIXME
         
     };
@@ -778,7 +778,7 @@ class CylinderScalingHelperTools
                         if (rf_status == GSL_SUCCESS)
                               log_.info ("     Converged:");
                   
-                        log_.info("     Iteration %4d of %4d: bounds=[%.7f, %.7f], value=%.7f, error=%.7f",
+                        log_.info("     Iteration %4d of %4d: bounds=[%.6e, %.6e], value=%.6e, error=%.6e",
                                                   iter, max_iter, lo, hi, root, hi - lo);
                     }
                     while (rf_status == GSL_CONTINUE && iter < max_iter);                                    
@@ -894,7 +894,7 @@ class CylinderScalingHelperTools
                         if (rf_status == GSL_SUCCESS)
                               log_.info ("     Converged:");
                   
-                        log_.info("     Iteration %4d of %4d: bounds=[%.7f, %.7f], value=%.7f, error=%.7f",
+                        log_.info("     Iteration %4d of %4d: bounds=[%.6e, %.6e], value=%.6e, error=%.6e",
                                                   iter, max_iter, lo, hi, root, hi - lo);
                     }
                     while (rf_status == GSL_CONTINUE && iter < max_iter);                
@@ -902,7 +902,7 @@ class CylinderScalingHelperTools
                     // Finally, assemble the solution; z1_new and r_new will be passed back by this function further below                    
                     r_new  = std::min(r, root);
                     z1_new = std::min(z1, (this->*z1_function[di])(r_new));
-                    log_.info("C++: Result after rootfinding: r_new=%.7f, z1_new=%.7f", r_new, z1_new);
+                    log_.info("C++: Result after rootfinding: r_new=%.6e, z1_new=%.6e", r_new, z1_new);
                     
                     // Cleanup
                     gsl_root_fsolver_free(solver_ref);
@@ -1113,34 +1113,47 @@ class CylinderScalingHelperTools
         position_type ref_to_shell_z_vec( multiply(testShell_orientation_vector, ref_to_shell_z) );
         position_type ref_to_shell_r_vec( subtract(ref_to_shell_vec, ref_to_shell_z_vec) );
         length_type   ref_to_shell_r( length(ref_to_shell_r_vec) );     // the radius is always positive
-        length_type   ref_to_shell_z( ref_to_shell_z * direction );     // ref_to_shell_z is positive 
+        length_type   ref_to_shell_z_d( ref_to_shell_z * direction );   // ref_to_shell_z is positive 
                                                                         // on the scaling side (right/left)
+                                                                        // We introduce a new variable here
+                                                                        // in order to protect the original one.
 
         // calculate the distances in r/z from the scaling center to the shell
-        length_type scale_center_to_shell_r( ref_to_shell_r - scale_center_r );
-        length_type scale_center_to_shell_z( ref_to_shell_z - scale_center_z );
+        length_type scale_center_to_shell_r( ref_to_shell_r   - scale_center_r );
+        length_type scale_center_to_shell_z( ref_to_shell_z_d - scale_center_z );
 
         // get angles
         angle_type to_edge_angle( std::atan( (scale_center_to_shell_r - otherShell_radius) / 
                                                  (scale_center_to_shell_z - otherShell_hl)
                                            ) );
+        log_.info("C++: to_edge_angle=%.6e, scale_center_to_shell_r=%.6e, scale_center_to_shell_z=%.6e, otherShell_radius=%.6e, otherShell_hl=%.6e", 
+                      to_edge_angle, scale_center_to_shell_r, scale_center_to_shell_z, otherShell_radius, otherShell_hl);
 
         if(scale_center_to_shell_z - otherShell_hl < 0.0 )
+        {
+            log_.info("Adding M_PI..");
             to_edge_angle += M_PI;      // if the shell was too much to the side we correct the angle to be positive
         // elif: a negative angle was caused by a negative scale_center_to_shell we want a negative angle -> do nothing
         // otherwise: shell_angle is ok -> do nothing
+        }
 
+        log_.info("C++: to_edge_angle=%.6e, scale_angle=%.6e", to_edge_angle, scale_angle);
         if(to_edge_angle <= scale_angle)
         {   // otherShell collides with the scaling cylinder ('testShell') on top
-            z1_new = std::min(z1, (ref_to_shell_z - otherShell_hl) );
+            log_.info("C++: to_edge_angle <= scale_angle");
+            z1_new = std::min(z1, (ref_to_shell_z_d - otherShell_hl) );
             r_new  = std::min(r,  (this->*r1_function[this->di])(z1_new) );
                      // TODO if z1 hasn't changed we also don't have to recalculate this
+            log_.info("z1=%.6e, ref_to_shell_z_d=%.6e, otherShell_hl=%.6e", z1, ref_to_shell_z_d, otherShell_hl);
+            log_.info("r=%.6e, z1_new=%.6e, r_new=%.6e", r, z1_new, r_new);
         }
         else
         {   // otherShell collides with the scaling cylinder ('testShell') on the radial side
             r_new  = std::min(r, (ref_to_shell_r - otherShell_radius) );
             z1_new = std::min(z1, (this->*z1_function[this->di])(r_new) );
         }
+        
+        z2_new = std::min(z2, (this->*z2_function[di])(r_new));
         
         return create_vector<position_type>(r_new, z1_new, z2_new); // TODO what happens with z2_new?
     };
