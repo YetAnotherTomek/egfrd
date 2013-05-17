@@ -846,6 +846,9 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     # -> the shell MUST be a Cylinder.
     assert(type(shape) is Cylinder)
 
+    calculation_mode = "Python"
+    #calculation_mode = "C++"
+
     # Laurens' algorithm (part2)
     shell_position = shape.position
     shell_radius = shape.radius 
@@ -911,647 +914,657 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     # This must always be the case:
     assert scale_angle >= 0.0
 
-    # Pack scaling info to reduce no. of passed arguments
-    scale_center_info = [scale_center_r, scale_center_z, 0.0]   # last vector component unused
-    scale_angle_info  = [scale_angle, tan_scale_angle, 0.0]     # last vector component unused
-    testShell_dimensions  = [r, z1, z2]
-    testShell_reference_point     = reference_point
-    testShell_orientation_vector  = orientation_vector
-    otherShell_position_t         = shell_position_t
-    otherShell_orientation_vector = shape.unit_z
-    otherShell_dimensions = [shell_radius, shell_half_length, shell_half_length] # last vector component unused
-    # Pass on to helper tools class, extended into Python from C++
-    HT = CylinderScalingHelperTools(testShell.ScalingFunctions, \
-                                    testShell_reference_point, testShell_orientation_vector, testShell_dimensions, \
-                                    otherShell_position_t, otherShell_orientation_vector, otherShell_dimensions, \
-                                    direction, scale_center_info, scale_angle_info
-                                   )
-
-    log.info("Calculating new shell dimensions in C++ ...")
-    scaled_r_z1_z2 = HT.get_dr_dzright_dzleft_to_CylindricalShape()
-    #scaled_r_z1_z2 = [0,0,0] # for TESTING, to deactivate
-    r_new_c  = scaled_r_z1_z2[0]
-    z1_new_c = scaled_r_z1_z2[1]
-    z2_new_c = scaled_r_z1_z2[2]
 
 
-    # HERE THE OLD (PYTHON-BASED) CALCULATIONS START
-    # TODO REMOVE THIS AFTER TESTING
+    if calculation_mode == "C++":
+        # Pack scaling info to reduce no. of passed arguments
+        scale_center_info = [scale_center_r, scale_center_z, 0.0]   # last vector component unused
+        scale_angle_info  = [scale_angle, tan_scale_angle, 0.0]     # last vector component unused
+        testShell_dimensions  = [r, z1, z2]
+        testShell_reference_point     = reference_point
+        testShell_orientation_vector  = orientation_vector
+        otherShell_position_t         = shell_position_t
+        otherShell_orientation_vector = shape.unit_z
+        otherShell_dimensions = [shell_radius, shell_half_length, shell_half_length] # last vector component unused
+        # Pass on to helper tools class, extended into Python from C++
+        HT = CylinderScalingHelperTools(testShell.ScalingFunctions, \
+                                        testShell_reference_point, testShell_orientation_vector, testShell_dimensions, \
+                                        otherShell_position_t, otherShell_orientation_vector, otherShell_dimensions, \
+                                        direction, scale_center_info, scale_angle_info
+                                      )
 
-    # Check how the cylinders are oriented with respect to each other
-    relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))
-
-    if feq(relative_orientation, 1.0):
-    #### If the cylinders are parallel ####
-
-        #log.info("Python: Scaling parallel cylinders")
-        # calculate ref_to_shell_r/z in the cylindrical coordinate system on the right/left side
-        ref_to_shell_z_vec = ref_to_shell_z * orientation_vector
-        ref_to_shell_r_vec = ref_to_shell_vec - ref_to_shell_z_vec
-        ref_to_shell_r = length(ref_to_shell_r_vec)         # the radius is always positive
-        ref_to_shell_z = ref_to_shell_z * direction         # ref_to_shell_z is positive on the scaling side (right/left)
+        #log.info("Calculating new shell dimensions in C++ ...") # TESTING
+        scaled_r_z1_z2 = HT.get_dr_dzright_dzleft_to_CylindricalShape()
+        #scaled_r_z1_z2 = [0,0,0] # for TESTING, to deactivate
+        r_new_c  = scaled_r_z1_z2[0]
+        z1_new_c = scaled_r_z1_z2[1]
+        z2_new_c = scaled_r_z1_z2[2]
 
 
-        # calculate the distances in r/z from the scaling center to the shell
-        scale_center_to_shell_r = ref_to_shell_r - scale_center_r
-        scale_center_to_shell_z = ref_to_shell_z - scale_center_z
+    elif calculation_mode == "Python":
+        # HERE THE OLD (PYTHON-BASED) CALCULATIONS START
+        # TODO REMOVE THIS AFTER TESTING
 
-        # get angles
-        to_edge_angle = math.atan( (scale_center_to_shell_r - shell_radius) / (scale_center_to_shell_z - shell_half_length) )        
+        # Check how the cylinders are oriented with respect to each other
+        relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))
 
-        if (scale_center_to_shell_z - shell_half_length) < 0.0:
-            to_edge_angle += Pi           # if the shell was too much to the side we correct the angle to be positive
-        # elif: a negative angle was caused by a negative scale_center_to_shell we want a negative angle -> do nothing
-        # otherwise: shell_angle is ok -> do nothing
+        if feq(relative_orientation, 1.0):
+        #### If the cylinders are parallel ####
 
-        if to_edge_angle <= scale_angle:
-            # shell hits the scaling cylinder on top
-            z1_new = min(z1, (ref_to_shell_z - shell_half_length))
-            r_new  = min(r,  r1_function(z1_new))           # TODO if z1 hasn't changed we also don't have to recalculate this
-        else:
-            # shell hits the scaling cylinder on the radial side
-            r_new = min(r, (ref_to_shell_r - shell_radius))
-            z1_new = min(z1, z1_function(r_new))
+            #log.info("Python: Scaling parallel cylinders")
+            # calculate ref_to_shell_r/z in the cylindrical coordinate system on the right/left side
+            ref_to_shell_z_vec = ref_to_shell_z * orientation_vector
+            ref_to_shell_r_vec = ref_to_shell_vec - ref_to_shell_z_vec
+            ref_to_shell_r = length(ref_to_shell_r_vec)         # the radius is always positive
+            ref_to_shell_z = ref_to_shell_z * direction         # ref_to_shell_z is positive on the scaling side (right/left)
 
-    elif feq(relative_orientation, 0):
-    #### If the cylinders are oriented perpendicularly ####
 
-        # First construct a local coordinate system:
-        #   - The local x-axis is defined as the vector parallel to the axis of the neighboring shell pointing
-        #   from the reference_point of the scaling cylinder towards the neighboring shell.
-        #   - The local y-axis is defined as the vector parallel to the flat side of the shell, perpendicular to the
-        #   axis of the scaling cylinder. It also points from the reference_point of the scaling cylinder to the shell.
-        #   - The local z-axis is defined as the vector parallel to the axis of the scaling cylinder pointing
-        #   from the reference point towards the neighboring shell.
-        if numpy.dot(ref_to_shell_vec, shape.unit_z) >= 0:
-            local_x = shape.unit_z
-        else:
-            local_x = -shape.unit_z
-        local_z = orientation_vector * direction
-        cross = numpy.cross(local_x, local_z)
-        if numpy.dot(ref_to_shell_vec, cross) >= 0:
-            # cross already points towards the shell, we are fine
-            local_y = cross
-        else:
-            # it points away from the shell, thus negate it
-            local_y = -cross
+            # calculate the distances in r/z from the scaling center to the shell
+            scale_center_to_shell_r = ref_to_shell_r - scale_center_r
+            scale_center_to_shell_z = ref_to_shell_z - scale_center_z
 
-        # Transform the vector pointing from the ref. point towards the shell
-        # into the local coordinate system
-        ref_to_shell_x = numpy.dot(ref_to_shell_vec, local_x)
-        ref_to_shell_y = numpy.dot(ref_to_shell_vec, local_y)
-        ref_to_shell_z = numpy.dot(ref_to_shell_vec, local_z)
-        assert (ref_to_shell_x >= 0.0) and (ref_to_shell_y >= 0.0) and (ref_to_shell_z >= 0.0)  # by the definition of the local coordinate system
-        # Also calculate the coordinates of the scale center
-        # FIXME Attention: The scale center is not always on the z-axis!
-        scale_center_to_shell_x = ref_to_shell_x
-        scale_center_to_shell_y = ref_to_shell_y
-        scale_center_to_shell_z = ref_to_shell_z - scale_center_z
-        # And the coordinates of the closest corner of a box surrounding the shape
-        ref_to_shell_x2 = ref_to_shell_x - shell_half_length
-        ref_to_shell_y2 = ref_to_shell_y - shell_radius
-        ref_to_shell_z2 = ref_to_shell_z - shell_radius # not really needed, but defined here for completeness
+            # get angles
+            to_edge_angle = math.atan( (scale_center_to_shell_r - shell_radius) / (scale_center_to_shell_z - shell_half_length) )        
 
-        # Define situation (collision) specifiers
-        # Depending on the geometric constellation the scaling will eventually lead to different collision behaviour
-        # which has to be treated in different ways; the following collision specifiers are from the point of view
-        # of the scaled cylinder:
-        BARREL_HITS_FLAT, EDGE_HITS_EDGE, BARREL_HITS_EDGE, FLAT_HITS_BARREL, EDGE_HITS_BARREL, BARREL_HITS_BARREL = range(6)
-        situation_string = ["BARREL_HITS_FLAT", "EDGE_HITS_EDGE", "BARREL_HITS_EDGE", "FLAT_HITS_BARREL", "EDGE_HITS_BARREL", "BARREL_HITS_BARREL"]
+            if (scale_center_to_shell_z - shell_half_length) < 0.0:
+                to_edge_angle += Pi           # if the shell was too much to the side we correct the angle to be positive
+            # elif: a negative angle was caused by a negative scale_center_to_shell we want a negative angle -> do nothing
+            # otherwise: shell_angle is ok -> do nothing
 
-        #### (1) Now first determine which type of collision happens:
-
-        if (ref_to_shell_x2 < 0) and (ref_to_shell_y2 < 0):
-            # Quadrant 1
-            quadrant = 1
-
-            # Scale cylinder one until its height is equal to the z-distance minus the radius of the cyl. shell 2;
-            # Then check whether any point of the axis of cyl. 2 projected on the top side of cyl. 1 is inside the radius of (scaled) cyl. 1.
-            # If this is the case, we have the flat side of cyl. 1 hitting the barrel of cyl. 2. Else we have the edge hitting the barrel.
-            r1_touch = (scale_center_to_shell_z - shell_radius)*tan_scale_angle
-
-            if r1_touch >= scale_center_to_shell_y:
-                # At least a part of the projected axis is within r_touch => flat side of scaled cyl. hits the barrel of cyl. 2
-                # Note that we know that at least a part of the shell is above the top side of the scaled cylinder (quadrant 1 condition)
-                situation = FLAT_HITS_BARREL
+            if to_edge_angle <= scale_angle:
+                # shell hits the scaling cylinder on top
+                z1_new = min(z1, (ref_to_shell_z - shell_half_length))
+                r_new  = min(r,  r1_function(z1_new))           # TODO if z1 hasn't changed we also don't have to recalculate this
             else:
-                situation = EDGE_HITS_BARREL
+                # shell hits the scaling cylinder on the radial side
+                r_new = min(r, (ref_to_shell_r - shell_radius))
+                z1_new = min(z1, z1_function(r_new))
 
-        elif (ref_to_shell_x2 >= 0) and (ref_to_shell_y2 < 0):
-            # Quadrant 2
-            quadrant = 2
+        elif feq(relative_orientation, 0):
+        #### If the cylinders are oriented perpendicularly ####
 
-            scale_center_to_shell_x_minus_half_length = scale_center_to_shell_x - shell_half_length
-
-            # The case scale_angle=0, i.e. radius remaining constant at scaling, has to be treated separately
-            # because in this case the mathematics in the standard case misdetect the collision situation
-            if scale_angle == 0:
-                
-                if math.sqrt( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length + \
-                              scale_center_to_shell_y*scale_center_to_shell_y) < r :
-                # The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
-                # Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
-                    situation = FLAT_HITS_BARREL
-
-                else:
-                    situation = EDGE_HITS_EDGE
-                    # This will also properly treat the case in which there is no collision because the projection of
-                    # the static cylinder does not overlap with the flat side circle of the scaled cylinder
+            # First construct a local coordinate system:
+            #   - The local x-axis is defined as the vector parallel to the axis of the neighboring shell pointing
+            #   from the reference_point of the scaling cylinder towards the neighboring shell.
+            #   - The local y-axis is defined as the vector parallel to the flat side of the shell, perpendicular to the
+            #   axis of the scaling cylinder. It also points from the reference_point of the scaling cylinder to the shell.
+            #   - The local z-axis is defined as the vector parallel to the axis of the scaling cylinder pointing
+            #   from the reference point towards the neighboring shell.
+            if numpy.dot(ref_to_shell_vec, shape.unit_z) >= 0:
+                local_x = shape.unit_z
             else:
-                # case scale_angle >0
+                local_x = -shape.unit_z
+            local_z = orientation_vector * direction
+            cross = numpy.cross(local_x, local_z)
+            if numpy.dot(ref_to_shell_vec, cross) >= 0:
+                # cross already points towards the shell, we are fine
+                local_y = cross
+            else:
+                # it points away from the shell, thus negate it
+                local_y = -cross
 
-                # Two points on the edge of the static cylinder are of interest here:
-                # - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
-                # - the "critpoint" (critical point), which is the point on the edge with the shortest distance to the scale center                  
-                scale_center_to_flatend_x   = scale_center_to_shell_x_minus_half_length - scale_center_r
-                scale_center_to_lowpoint_x  = math.sqrt( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length +\
-                                                         scale_center_to_shell_y*scale_center_to_shell_y ) - scale_center_r
-                    # TODO Is there no better way to include scale_center_r here?
-                scale_center_to_critpoint_z = scale_center_to_shell_z - math.sqrt(shell_radius*shell_radius - scale_center_to_shell_y*scale_center_to_shell_y) 
-                scale_center_to_lowpoint_z  = scale_center_to_shell_z - shell_radius
+            # Transform the vector pointing from the ref. point towards the shell
+            # into the local coordinate system
+            ref_to_shell_x = numpy.dot(ref_to_shell_vec, local_x)
+            ref_to_shell_y = numpy.dot(ref_to_shell_vec, local_y)
+            ref_to_shell_z = numpy.dot(ref_to_shell_vec, local_z)
+            assert (ref_to_shell_x >= 0.0) and (ref_to_shell_y >= 0.0) and (ref_to_shell_z >= 0.0)  # by the definition of the local coordinate system
+            # Also calculate the coordinates of the scale center
+            # FIXME Attention: The scale center is not always on the z-axis!
+            scale_center_to_shell_x = ref_to_shell_x
+            scale_center_to_shell_y = ref_to_shell_y
+            scale_center_to_shell_z = ref_to_shell_z - scale_center_z
+            # And the coordinates of the closest corner of a box surrounding the shape
+            ref_to_shell_x2 = ref_to_shell_x - shell_half_length
+            ref_to_shell_y2 = ref_to_shell_y - shell_radius
+            ref_to_shell_z2 = ref_to_shell_z - shell_radius # not really needed, but defined here for completeness
 
-                # Strategy:
-                # - When the scale angle is smaller than the angle between the scaled cylinder's axis and the line
-                #   that links the critpoint then we have a BARREL_HITS_FLAT situation.
-                # - When the scale angle is bigger than the angle between the scaled cylinder's axis and the line
-                #   that links the lowpoint then we are in a FLAT_HITS_BARREL situation.                  
-                # - Everything else results in EDGE_HITS_EDGE.
+            # Define situation (collision) specifiers
+            # Depending on the geometric constellation the scaling will eventually lead to different collision behaviour
+            # which has to be treated in different ways; the following collision specifiers are from the point of view
+            # of the scaled cylinder:
+            BARREL_HITS_FLAT, EDGE_HITS_EDGE, BARREL_HITS_EDGE, FLAT_HITS_BARREL, EDGE_HITS_BARREL, BARREL_HITS_BARREL = range(6)
+            situation_string = ["BARREL_HITS_FLAT", "EDGE_HITS_EDGE", "BARREL_HITS_EDGE", "FLAT_HITS_BARREL", "EDGE_HITS_BARREL", "BARREL_HITS_BARREL"]
 
-                # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and lowpoint
-                if scale_center_to_critpoint_z == 0:
-                    scale_center_to_shell_crit_angle_y = Pi/2
-                else:
-                    scale_center_to_shell_crit_angle_y = math.atan(scale_center_to_flatend_x/ scale_center_to_critpoint_z)
-                    if scale_center_to_critpoint_z < 0.0:
-                        scale_center_to_shell_crit_angle_y += Pi
+            #### (1) Now first determine which type of collision happens:
 
-                # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and critpoint
-                if scale_center_to_lowpoint_z == 0:
-                    scale_center_to_shell_low_angle_y = Pi/2
-                else:
-                    scale_center_to_shell_low_angle_y  = math.atan(scale_center_to_lowpoint_x/ scale_center_to_lowpoint_z )
-                    if scale_center_to_lowpoint_z < 0.0:
-                        scale_center_to_shell_low_angle_y += Pi
+            if (ref_to_shell_x2 < 0) and (ref_to_shell_y2 < 0):
+                # Quadrant 1
+                quadrant = 1
 
-                # Compare the angles to determine the situation
-                if scale_angle <= scale_center_to_shell_crit_angle_y:
-                    situation = BARREL_HITS_FLAT
-                elif scale_angle >= scale_center_to_shell_low_angle_y:
+                # Scale cylinder one until its height is equal to the z-distance minus the radius of the cyl. shell 2;
+                # Then check whether any point of the axis of cyl. 2 projected on the top side of cyl. 1 is inside the radius of (scaled) cyl. 1.
+                # If this is the case, we have the flat side of cyl. 1 hitting the barrel of cyl. 2. Else we have the edge hitting the barrel.
+                r1_touch = (scale_center_to_shell_z - shell_radius)*tan_scale_angle
+
+                if r1_touch >= scale_center_to_shell_y:
+                    # At least a part of the projected axis is within r_touch => flat side of scaled cyl. hits the barrel of cyl. 2
+                    # Note that we know that at least a part of the shell is above the top side of the scaled cylinder (quadrant 1 condition)
                     situation = FLAT_HITS_BARREL
                 else:
-                    assert scale_center_to_shell_crit_angle_y < scale_angle and \
-                            scale_angle < scale_center_to_shell_low_angle_y
-                    situation = EDGE_HITS_EDGE
-                    r1_min = (scale_center_to_shell_x - shell_half_length)*(1.0+TOLERANCE)
-                    h1_min = r1_min/tan_scale_angle
-
-        elif (ref_to_shell_x2 < 0) and (ref_to_shell_y2 >= 0):
-            # Quadrant 3
-            quadrant = 3
-
-            # The case scale_angle=0, i.e. radius remaining constant at scaling, has to be treated separately
-            # because in this case the mathematics in the standard case misdetect the collision situation
-            if scale_angle == 0:
-
-                if scale_center_to_shell_y < r :
-                # The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
-                # Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
-                    situation = FLAT_HITS_BARREL
-
-                elif scale_center_to_shell_y - shell_radius <= r:
                     situation = EDGE_HITS_BARREL
 
+            elif (ref_to_shell_x2 >= 0) and (ref_to_shell_y2 < 0):
+                # Quadrant 2
+                quadrant = 2
+
+                scale_center_to_shell_x_minus_half_length = scale_center_to_shell_x - shell_half_length
+
+                # The case scale_angle=0, i.e. radius remaining constant at scaling, has to be treated separately
+                # because in this case the mathematics in the standard case misdetect the collision situation
+                if scale_angle == 0:
+                    
+                    if math.sqrt( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length + \
+                                  scale_center_to_shell_y*scale_center_to_shell_y) < r :
+                    # The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
+                    # Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
+                        situation = FLAT_HITS_BARREL
+
+                    else:
+                        situation = EDGE_HITS_EDGE
+                        # This will also properly treat the case in which there is no collision because the projection of
+                        # the static cylinder does not overlap with the flat side circle of the scaled cylinder
                 else:
-                    # In this case the cylinders do not hit; this is treated properly by the BARREL_HITS_BARREL routine
-                    situation = BARREL_HITS_BARREL
+                    # case scale_angle >0
+
+                    # Two points on the edge of the static cylinder are of interest here:
+                    # - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
+                    # - the "critpoint" (critical point), which is the point on the edge with the shortest distance to the scale center                  
+                    scale_center_to_flatend_x   = scale_center_to_shell_x_minus_half_length - scale_center_r
+                    scale_center_to_lowpoint_x  = math.sqrt( scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length +\
+                                                            scale_center_to_shell_y*scale_center_to_shell_y ) - scale_center_r
+                        # TODO Is there no better way to include scale_center_r here?
+                    scale_center_to_critpoint_z = scale_center_to_shell_z - math.sqrt(shell_radius*shell_radius - scale_center_to_shell_y*scale_center_to_shell_y) 
+                    scale_center_to_lowpoint_z  = scale_center_to_shell_z - shell_radius
+
+                    # Strategy:
+                    # - When the scale angle is smaller than the angle between the scaled cylinder's axis and the line
+                    #   that links the critpoint then we have a BARREL_HITS_FLAT situation.
+                    # - When the scale angle is bigger than the angle between the scaled cylinder's axis and the line
+                    #   that links the lowpoint then we are in a FLAT_HITS_BARREL situation.                  
+                    # - Everything else results in EDGE_HITS_EDGE.
+
+                    # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and lowpoint
+                    if scale_center_to_critpoint_z == 0:
+                        scale_center_to_shell_crit_angle_y = Pi/2
+                    else:
+                        scale_center_to_shell_crit_angle_y = math.atan(scale_center_to_flatend_x/ scale_center_to_critpoint_z)
+                        if scale_center_to_critpoint_z < 0.0:
+                            scale_center_to_shell_crit_angle_y += Pi
+
+                    # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and critpoint
+                    if scale_center_to_lowpoint_z == 0:
+                        scale_center_to_shell_low_angle_y = Pi/2
+                    else:
+                        scale_center_to_shell_low_angle_y  = math.atan(scale_center_to_lowpoint_x/ scale_center_to_lowpoint_z )
+                        if scale_center_to_lowpoint_z < 0.0:
+                            scale_center_to_shell_low_angle_y += Pi
+
+                    # Compare the angles to determine the situation
+                    if scale_angle <= scale_center_to_shell_crit_angle_y:
+                        situation = BARREL_HITS_FLAT
+                    elif scale_angle >= scale_center_to_shell_low_angle_y:
+                        situation = FLAT_HITS_BARREL
+                    else:
+                        assert scale_center_to_shell_crit_angle_y < scale_angle and \
+                                scale_angle < scale_center_to_shell_low_angle_y
+                        situation = EDGE_HITS_EDGE
+                        r1_min = (scale_center_to_shell_x - shell_half_length)*(1.0+TOLERANCE)
+                        h1_min = r1_min/tan_scale_angle
+
+            elif (ref_to_shell_x2 < 0) and (ref_to_shell_y2 >= 0):
+                # Quadrant 3
+                quadrant = 3
+
+                # The case scale_angle=0, i.e. radius remaining constant at scaling, has to be treated separately
+                # because in this case the mathematics in the standard case misdetect the collision situation
+                if scale_angle == 0:
+
+                    if scale_center_to_shell_y < r :
+                    # The lowest point of the static cylinder is within the radius/flat side circle of the scaling cylinder.
+                    # Therefore, when the height is scaled, the flat side must hit the barrel of the static cylinder at the lowpoint.
+                        situation = FLAT_HITS_BARREL
+
+                    elif scale_center_to_shell_y - shell_radius <= r:
+                        situation = EDGE_HITS_BARREL
+
+                    else:
+                        # In this case the cylinders do not hit; this is treated properly by the BARREL_HITS_BARREL routine
+                        situation = BARREL_HITS_BARREL
+
+                else:
+
+                    # Two points on the edge of the static cylinder are of interest here:
+                    # - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
+                    # - the "critpoint" (critical point), which is the point on the edge with the shortest distance to the scale center   
+                    scale_center_to_shell_y -= scale_center_r  # TODO Is there no better way to include scale_center_r here?
+                    scale_center_to_critpoint_y = scale_center_to_shell_y - shell_radius
+                    scale_center_to_lowpoint_z  = scale_center_to_shell_z - shell_radius
+
+                    # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and critpoint
+                    if scale_center_to_shell_z == 0.0:
+                        scale_center_to_shell_crit_angle_x = Pi/2.0
+                    else:
+                        scale_center_to_shell_crit_angle_x = math.atan(scale_center_to_critpoint_y / scale_center_to_shell_z)
+                        if scale_center_to_shell_z < 0.0:
+                            scale_center_to_shell_crit_angle_x += Pi
+                    # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and lowpoint
+                    if scale_center_to_lowpoint_z == 0.0:
+                        scale_center_to_shell_low_angle_x = Pi/2.0
+                    else:
+                        scale_center_to_shell_low_angle_x  = math.atan(scale_center_to_shell_y/scale_center_to_lowpoint_z)
+                        if scale_center_to_lowpoint_z < 0.0:
+                            scale_center_to_shell_low_angle_x += Pi
+
+                    # Determine which collision will happen:
+                    # If the scale angle is bigger than the angle between the scaled cylinder's axis and the lowpoint
+                    # then we hit the barrel of the static cylinder when scaling.
+                    # If the scale angle is smaller than the angle between the scaled cylinder's axis and the critpoint
+                    # the barrel of the scaled cylinder will hit the barrel of the static cylinder.
+                    # Otherwise we have the edge of the scaled cylinder hitting the barrel of the static cylinder.
+                    if scale_angle <= scale_center_to_shell_crit_angle_x:
+                        situation = BARREL_HITS_BARREL
+                    elif scale_center_to_shell_low_angle_x <= scale_angle:
+                        situation = FLAT_HITS_BARREL
+                    else:
+                        assert scale_center_to_shell_crit_angle_x < scale_angle and \
+                              scale_angle < scale_center_to_shell_low_angle_x
+                        situation = EDGE_HITS_BARREL
 
             else:
+                # Quadrant 4
+                quadrant = 4
+
+                assert (ref_to_shell_x2 >= 0) and (ref_to_shell_y2 >= 0)
+
+                scale_center_to_shell_x_minus_half_length = scale_center_to_shell_x - shell_half_length
+                scale_center_to_shell_y_minus_radius      = scale_center_to_shell_y - shell_radius
 
                 # Two points on the edge of the static cylinder are of interest here:
                 # - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
-                # - the "critpoint" (critical point), which is the point on the edge with the shortest distance to the scale center   
-                scale_center_to_shell_y -= scale_center_r  # TODO Is there no better way to include scale_center_r here?
-                scale_center_to_critpoint_y = scale_center_to_shell_y - shell_radius
-                scale_center_to_lowpoint_z  = scale_center_to_shell_z - shell_radius
+                # - the "critpoint" (critical point), which is the point on the edge with the minimal y-distance to
+                #   the scale center in the zy-plane
+                scale_center_to_critpoint_r = math.sqrt(scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius + \
+                                                        scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length) - scale_center_r  # a_r
+                scale_center_to_lowpoint_r = math.sqrt(scale_center_to_shell_y*scale_center_to_shell_y + \
+                                                      scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length) - scale_center_r   # b_r
+                scale_center_to_lowpoint_z = scale_center_to_shell_z - shell_radius                                                                            # b_z
 
-                # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and critpoint
+                # Calculate the angle between the z-axis of the scaled cylinder and the line that
+                # connects this axis with the "critpoint" on the static cylinder's edge
                 if scale_center_to_shell_z == 0.0:
-                    scale_center_to_shell_crit_angle_x = Pi/2.0
+                    scale_center_to_shell_crit_angle_xy = Pi/2.0
                 else:
-                    scale_center_to_shell_crit_angle_x = math.atan(scale_center_to_critpoint_y / scale_center_to_shell_z)
+                    scale_center_to_shell_crit_angle_xy = math.atan(scale_center_to_critpoint_r / scale_center_to_shell_z)
                     if scale_center_to_shell_z < 0.0:
-                        scale_center_to_shell_crit_angle_x += Pi
-                # Calculate the angle between the scaled cylinder's axis and the line that links the scale center and lowpoint
+                        scale_center_to_shell_crit_angle_xy += Pi
+
+                # Calculate the angle between the z-axis of the scaled cylinder and the line that
+                # connects this axis with the "lowpoint" on the static cylinder's edge
                 if scale_center_to_lowpoint_z == 0.0:
-                    scale_center_to_shell_low_angle_x = Pi/2.0
+                    scale_center_to_shell_low_angle_xy = Pi/2.0
                 else:
-                    scale_center_to_shell_low_angle_x  = math.atan(scale_center_to_shell_y/scale_center_to_lowpoint_z)
+                    scale_center_to_shell_low_angle_xy  = math.atan(scale_center_to_lowpoint_r / scale_center_to_lowpoint_z )
                     if scale_center_to_lowpoint_z < 0.0:
-                        scale_center_to_shell_low_angle_x += Pi
+                        scale_center_to_shell_low_angle_xy += Pi
 
-                # Determine which collision will happen:
-                # If the scale angle is bigger than the angle between the scaled cylinder's axis and the lowpoint
-                # then we hit the barrel of the static cylinder when scaling.
-                # If the scale angle is smaller than the angle between the scaled cylinder's axis and the critpoint
-                # the barrel of the scaled cylinder will hit the barrel of the static cylinder.
-                # Otherwise we have the edge of the scaled cylinder hitting the barrel of the static cylinder.
-                if scale_angle <= scale_center_to_shell_crit_angle_x:
-                    situation = BARREL_HITS_BARREL
-                elif scale_center_to_shell_low_angle_x <= scale_angle:
-                    situation = FLAT_HITS_BARREL
-                else:
-                    assert scale_center_to_shell_crit_angle_x < scale_angle and \
-                          scale_angle < scale_center_to_shell_low_angle_x
-                    situation = EDGE_HITS_BARREL
-
-        else:
-            # Quadrant 4
-            quadrant = 4
-
-            assert (ref_to_shell_x2 >= 0) and (ref_to_shell_y2 >= 0)
-
-            scale_center_to_shell_x_minus_half_length = scale_center_to_shell_x - shell_half_length
-            scale_center_to_shell_y_minus_radius      = scale_center_to_shell_y - shell_radius
-
-            # Two points on the edge of the static cylinder are of interest here:
-            # - the "lowpoint", which is the point on the edge with the minimal z-distance to the scale center in the zy-plane
-            # - the "critpoint" (critical point), which is the point on the edge with the minimal y-distance to
-            #   the scale center in the zy-plane
-            scale_center_to_critpoint_r = math.sqrt(scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius + \
-                                                    scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length) - scale_center_r  # a_r
-            scale_center_to_lowpoint_r = math.sqrt(scale_center_to_shell_y*scale_center_to_shell_y + \
-                                                   scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length) - scale_center_r   # b_r
-            scale_center_to_lowpoint_z = scale_center_to_shell_z - shell_radius                                                                            # b_z
-
-            # Calculate the angle between the z-axis of the scaled cylinder and the line that
-            # connects this axis with the "critpoint" on the static cylinder's edge
-            if scale_center_to_shell_z == 0.0:
-                scale_center_to_shell_crit_angle_xy = Pi/2.0
-            else:
-                scale_center_to_shell_crit_angle_xy = math.atan(scale_center_to_critpoint_r / scale_center_to_shell_z)
-                if scale_center_to_shell_z < 0.0:
-                    scale_center_to_shell_crit_angle_xy += Pi
-
-            # Calculate the angle between the z-axis of the scaled cylinder and the line that
-            # connects this axis with the "lowpoint" on the static cylinder's edge
-            if scale_center_to_lowpoint_z == 0.0:
-                scale_center_to_shell_low_angle_xy = Pi/2.0
-            else:
-                scale_center_to_shell_low_angle_xy  = math.atan(scale_center_to_lowpoint_r / scale_center_to_lowpoint_z )
-                if scale_center_to_lowpoint_z < 0.0:
-                    scale_center_to_shell_low_angle_xy += Pi
-
-            # First treat the special case: when the scale center is further away from the z-axis than the "critpoint" (in the xy-plane).
-            # This also treats the case in which scale_angle = 0 and the scaled cylinder is directly below the static shell.
-            if scale_center_to_critpoint_r <= 0.0:
-                situation = EDGE_HITS_EDGE
-
-                if scale_center_to_lowpoint_r <= 0.0:
-                    situation = FLAT_HITS_BARREL
-
-            # Now the standard case:
-            else:
-
-                if scale_angle <= scale_center_to_shell_crit_angle_xy:
-                    situation = BARREL_HITS_EDGE
-
-                elif scale_center_to_shell_low_angle_xy <= scale_angle:
-                    situation = FLAT_HITS_BARREL
-
-                else:
-                    assert scale_center_to_shell_crit_angle_xy < scale_angle and scale_angle < scale_center_to_shell_low_angle_xy and scale_angle > 0.0
+                # First treat the special case: when the scale center is further away from the z-axis than the "critpoint" (in the xy-plane).
+                # This also treats the case in which scale_angle = 0 and the scaled cylinder is directly below the static shell.
+                if scale_center_to_critpoint_r <= 0.0:
                     situation = EDGE_HITS_EDGE
-                    r1_min = math.sqrt(scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length + \
-                                       scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius) * (1.0+TOLERANCE)
-                    h1_min = r1_min/tan_scale_angle
 
-        ##TODO TESTING Debug info
-        #log.info("  *** QUADRANT = %s ***" % str(quadrant) )
-        #log.info("  *** Situation = %s" % str(situation_string[situation]) )
-        #log.info("  *** testShell=%s, r=%s, z1=%s" % (str(testShell), r, z1) )
-        #log.info("  *** scale_angle=%s, tan_scale_angle=%s, scale_center_z=%s, scale_center_r=%s" % (scale_angle, tan_scale_angle, scale_center_z, scale_center_r) )
-        #log.info("  *** shell_radius=%s, shell_half_length=%s" % (shell_radius, shell_half_length) )
-        #log.info("  *** ref_to_shell_x=%s, ref_to_shell_y=%s, ref_to_shell_z=%s" % (ref_to_shell_x, ref_to_shell_y, ref_to_shell_z) )
-        #log.info("  *** scale_center_to_shell_x=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s" % (scale_center_to_shell_x, scale_center_to_shell_y, scale_center_to_shell_z) )
+                    if scale_center_to_lowpoint_r <= 0.0:
+                        situation = FLAT_HITS_BARREL
 
-        ##### (2) Treat the situation accordingly        
-        if situation == BARREL_HITS_FLAT:
-            # the scaling cylinder hits the flat side of 'shell' with its barrel side
-            r_new = min(r, (ref_to_shell_x - shell_half_length))
-            z1_new = min(z1, z1_function(r_new))
-
-        elif situation == EDGE_HITS_EDGE:             
-            # the scaling cylinder hits the edge of 'shell' with its edge
-            # TODO we have a solution but it can only be found with a root finder -> slow
-            shell_radius_sq = shell_radius*shell_radius
-            scale_center_to_shell_edge_x = scale_center_to_shell_x - shell_half_length
-            scale_center_to_shell_edge_y = scale_center_to_shell_y - shell_radius
-            scale_center_to_shell_edge_z = scale_center_to_shell_z - shell_radius
-
-            if scale_angle == 0.0:
-
-                # scale_angle = 0 means that the radius r will stay constant at scaling
-                # Therefore, if the projected edge of the static shell lies outside of the 
-                # circle defined by r there will be no collision:
-                if r < math.sqrt( scale_center_to_shell_edge_x*scale_center_to_shell_edge_x + \
-                                  scale_center_to_shell_edge_y*scale_center_to_shell_edge_y ) :
-
-                    # The height and radius of the scaled cylinder remain unaltered
-                    r_new = r
-                    z1_new = z1         # Note that z1_function would give infinity,
-                                        # but we would take the min(z1_function(r_new), z1)
+                # Now the standard case:
                 else:
-                # There is a collision possible when z1 is scaled
-                    
-                    y1_collide = math.sqrt(r*r - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
-                    y2_collide = scale_center_to_shell_y - y1_collide
-                    h_collide = math.sqrt(shell_radius*shell_radius - y2_collide*y2_collide)
 
-                    h_touch = scale_center_to_shell_z - h_collide
-                    z1_new = min(z1, h_touch)
-                    r_new  = min(r,  r1_function(z1_new))
+                    if scale_angle <= scale_center_to_shell_crit_angle_xy:
+                        situation = BARREL_HITS_EDGE
 
-            else:
+                    elif scale_center_to_shell_low_angle_xy <= scale_angle:
+                        situation = FLAT_HITS_BARREL
 
-                # TESTING Code snippet to check whether rootfinder run is necessary
-                # We only want to run it if the radius increase at intersection of the cylinder edges is "significant".
-                # This is sub-optimal but it avoids rootfinder errors caused by the fact that the radius search interval
-                # becomes to small, which is equivalent to the potential r-increase becoming small.
-                #
-                # We define the increase as "significant" by comparing the potential radius increase with the radial (xy-) distance
-                # from the scale center to the static shell; if increase / distance >= 10% the gain is "significant".
-                #radial_distance = math.sqrt( scale_center_to_shell_x**2 + scale_center_to_shell_y**2 )
-                #potential_r_increase = math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2 ) - scale_center_to_shell_edge_x  
-                #assert radial_distance >= potential_r_increase and potential_r_increase >= 0
+                    else:
+                        assert scale_center_to_shell_crit_angle_xy < scale_angle and scale_angle < scale_center_to_shell_low_angle_xy and scale_angle > 0.0
+                        situation = EDGE_HITS_EDGE
+                        r1_min = math.sqrt(scale_center_to_shell_x_minus_half_length*scale_center_to_shell_x_minus_half_length + \
+                                          scale_center_to_shell_y_minus_radius*scale_center_to_shell_y_minus_radius) * (1.0+TOLERANCE)
+                        h1_min = r1_min/tan_scale_angle
 
-                #if( potential_r_increase / radial_distance >= 0.10 ):
+            ##TODO TESTING Debug info
+            #log.info("  *** QUADRANT = %s ***" % str(quadrant) )
+            #log.info("  *** Situation = %s" % str(situation_string[situation]) )
+            #log.info("  *** testShell=%s, r=%s, z1=%s" % (str(testShell), r, z1) )
+            #log.info("  *** scale_angle=%s, tan_scale_angle=%s, scale_center_z=%s, scale_center_r=%s" % (scale_angle, tan_scale_angle, scale_center_z, scale_center_r) )
+            #log.info("  *** shell_radius=%s, shell_half_length=%s" % (shell_radius, shell_half_length) )
+            #log.info("  *** ref_to_shell_x=%s, ref_to_shell_y=%s, ref_to_shell_z=%s" % (ref_to_shell_x, ref_to_shell_y, ref_to_shell_z) )
+            #log.info("  *** scale_center_to_shell_x=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s" % (scale_center_to_shell_x, scale_center_to_shell_y, scale_center_to_shell_z) )
 
-                    #run_rootfinder = True
+            ##### (2) Treat the situation accordingly        
+            if situation == BARREL_HITS_FLAT:
+                # the scaling cylinder hits the flat side of 'shell' with its barrel side
+                r_new = min(r, (ref_to_shell_x - shell_half_length))
+                z1_new = min(z1, z1_function(r_new))
 
-                #else:
+            elif situation == EDGE_HITS_EDGE:             
+                # the scaling cylinder hits the edge of 'shell' with its edge
+                # TODO we have a solution but it can only be found with a root finder -> slow
+                shell_radius_sq = shell_radius*shell_radius
+                scale_center_to_shell_edge_x = scale_center_to_shell_x - shell_half_length
+                scale_center_to_shell_edge_y = scale_center_to_shell_y - shell_radius
+                scale_center_to_shell_edge_z = scale_center_to_shell_z - shell_radius
 
-                    #run_rootfinder = False
-        
-                    #if scale_center_to_shell_x >= scale_center_to_shell_y:
-                        #r_touch = scale_center_to_shell_edge_x
+                if scale_angle == 0.0:
+
+                    # scale_angle = 0 means that the radius r will stay constant at scaling
+                    # Therefore, if the projected edge of the static shell lies outside of the 
+                    # circle defined by r there will be no collision:
+                    if r < math.sqrt( scale_center_to_shell_edge_x*scale_center_to_shell_edge_x + \
+                                      scale_center_to_shell_edge_y*scale_center_to_shell_edge_y ) :
+
+                        # The height and radius of the scaled cylinder remain unaltered
+                        r_new = r
+                        z1_new = z1         # Note that z1_function would give infinity,
+                                            # but we would take the min(z1_function(r_new), z1)
+                    else:
+                    # There is a collision possible when z1 is scaled
+                        
+                        y1_collide = math.sqrt(r*r - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x)
+                        y2_collide = scale_center_to_shell_y - y1_collide
+                        h_collide = math.sqrt(shell_radius*shell_radius - y2_collide*y2_collide)
+
+                        h_touch = scale_center_to_shell_z - h_collide
+                        z1_new = min(z1, h_touch)
+                        r_new  = min(r,  r1_function(z1_new))
+
+                else:
+
+                    # TESTING Code snippet to check whether rootfinder run is necessary
+                    # We only want to run it if the radius increase at intersection of the cylinder edges is "significant".
+                    # This is sub-optimal but it avoids rootfinder errors caused by the fact that the radius search interval
+                    # becomes to small, which is equivalent to the potential r-increase becoming small.
+                    #
+                    # We define the increase as "significant" by comparing the potential radius increase with the radial (xy-) distance
+                    # from the scale center to the static shell; if increase / distance >= 10% the gain is "significant".
+                    #radial_distance = math.sqrt( scale_center_to_shell_x**2 + scale_center_to_shell_y**2 )
+                    #potential_r_increase = math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2 ) - scale_center_to_shell_edge_x  
+                    #assert radial_distance >= potential_r_increase and potential_r_increase >= 0
+
+                    #if( potential_r_increase / radial_distance >= 0.10 ):
+
+                        #run_rootfinder = True
+
                     #else:
-                        #r_touch = scale_center_to_shell_edge_y
-                    
-                    #r_new  = min(r, r_touch)
-                    #z1_new = min(z1, z1_function(r_new))
+
+                        #run_rootfinder = False
+            
+                        #if scale_center_to_shell_x >= scale_center_to_shell_y:
+                            #r_touch = scale_center_to_shell_edge_x
+                        #else:
+                            #r_touch = scale_center_to_shell_edge_y
+                        
+                        #r_new  = min(r, r_touch)
+                        #z1_new = min(z1, z1_function(r_new))
 
 
-            #if run_rootfinder:
+                #if run_rootfinder:
+
+                    if scale_angle <= Pi/4.0:
+
+                        def h1_eq(x):
+
+                            #rhs = (scale_center_to_shell_z - \
+                                  #math.sqrt(shell_radius**2 - (scale_center_to_shell_y - math.sqrt( (x*tan_scale_angle)**2 - (scale_center_to_shell_x - shell_half_length)**2 ) )**2 ) )
+
+                            # TODO TESTING REMOVE THIS WHEN DONE
+                            #log.debug( "***** ROOTFINDER CALL: Calling h1_eq() with: *****" )
+                            #log.debug( "  r1 = %s" % (r1_function(x+scale_center_z)) )
+                            #log.debug( "  sqrt_arg = %s" % ((x*tan_scale_angle)**2 - scale_center_to_shell_edge_x**2) )
+                            #log.debug( "    tan_scale_angle = %s" % (tan_scale_angle) )
+                            #log.debug( "    x*tan_scale_angle = %s" % (x*tan_scale_angle) )
+                            #log.debug( "    scale_center_to_shell_edge_x = %s" % scale_center_to_shell_edge_x )
+
+                            # We will take the square root of the following below
+                            sqrt_arg = (x*tan_scale_angle)*(x*tan_scale_angle) - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x
+
+                            if sqrt_arg < 0.0 and abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x:
+
+                                sqrt_arg = 0.0      # This safety check is to prevent math domain errors
+                                                    # in case sqrt_arg is close to zero and taking the
+                                                    # difference results in very small negative numbers
+                                log.warn('Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.')
+
+                            eq_value = (scale_center_to_shell_z - x)*(scale_center_to_shell_z - x) - shell_radius_sq +\
+                                          (scale_center_to_shell_y - math.sqrt( sqrt_arg ))*(scale_center_to_shell_y - math.sqrt( sqrt_arg ))
+                            
+                            # TODO TESTING REMOVE THIS WHEN DONE                    
+                            #log.debug( "  h1 = %s, value = %s" % (x, eq_value ) )
+
+                            return eq_value
+
+                        # To ensure that we always search on an interval within which h1_eq() contains only one zero root
+                        # we enlarge the rootfinder interval, starting from safe bounds, towards the bounds beyond which we
+                        # know there are unwanted solutions. We stop the enlargement when function h1_eq() certainly 
+                        # changes sign within the interval.
+                        # We use a multiplicative factor tau to enlarge the domain. tau is set such that 
+                        # (1-tau)*h1_interval_max - (1+tau)*h1_interval_min >= 0.5*(h1_interval_max-h1_interval_min)
+                        # in order to ensure that the interval is nonzero and positive in the first iteration.
+
+                        # Set some repeating and default values
+                        # r1_interval min, r1_interval_max are the outer interval bounds for which there is only one root
+                        h1_interval_min = z1_function(scale_center_to_shell_edge_x) - scale_center_z
+                        h1_interval_max = z1_function( math.sqrt( scale_center_to_shell_y*scale_center_to_shell_y + \
+                                                          scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) ) - scale_center_z
+                        h1_interval_start = h1_interval_min
+                        h1_interval_end   = h1_interval_max
+                        # Set the enlargement factor; we want it to be at least as small as TOLERANCE
+                        tau = min(TOLERANCE, 0.5*(h1_interval_max-h1_interval_min)/(h1_interval_max+h1_interval_min))
+                        assert tau>0.0 and tau<1.0
+
+                        # Start the iteration
+                        n=1
+                        nmax=100
+                          # Since tau is very small, the iteration hardly ever should get to nmax; but to be safe...
+                        h1_eq_product = 1                    
+                        while h1_eq_product > 0.0:
+
+                            h1_interval_start = (1.0+tau**n) * h1_interval_min
+                            h1_interval_end   = (1.0-tau**n) * h1_interval_max
+                            h1_eq_product     = h1_eq(h1_interval_start) * h1_eq(h1_interval_end)
+
+                            n = n+1
+
+                            if n>nmax:
+                                raise testShellError('get_dr_dzright_dzleft_to_CylindricalShape: Could not find suitable rootfinder boundaries in EDGE_HITS_EDGE cylinder scaling. nmax=%s' % str(nmax) )
+
+                        assert(h1_interval_start >= 0)
+                        assert(h1_interval_end   >= h1_interval_end)
+
+                        # TODO TESTING REMOVE THIS WHEN DONE
+                        #log.debug( "***** NEW ROOTFINDER ITERATION *****" )
+                        #log.debug( "  Dy-r2 = %s" % (scale_center_to_shell_y-shell_radius) )
+                        #log.debug( "  Dx-h2 = %s" % scale_center_to_shell_edge_x )
+                        #log.debug( "  h1_interval_start = %s" % h1_interval_start )
+                        #log.debug( "  h1_interval_end = %s"   % h1_interval_end )
+                        #log.debug( "  h1(i_start) = %s"       % h1_eq(h1_interval_start) )
+                        #log.debug( "  h1(i_end) = %s"         % h1_eq(h1_interval_end) )
+
+                        # Finally, start the rootfinding
+                        h_touch = scale_center_z + findroot(h1_eq, h1_interval_start, h1_interval_end)
+                        z1_new = min(z1, h_touch)
+                        r_new  = min(r,  r1_function(z1_new))
+
+                    else:
+                        # This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
+                        # instead of h1; notice that scale_angle > 0 here, so we can divide by it
+                        def r1_eq(x):
+
+                            # We will take the square root of the following below
+                            sqrt_arg = x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x
+
+                            if sqrt_arg < 0.0 and abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x:
+
+                                sqrt_arg = 0.0      # This safety check is to prevent math domain errors
+                                                    # in case sqrt_arg is close to zero and taking the
+                                                    # difference results in very small negative numbers
+                                log.warn('Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.')
+
+                            eq_value = (scale_center_to_shell_z - x/tan_scale_angle)*(scale_center_to_shell_z - x/tan_scale_angle) - shell_radius_sq +\
+                                          (scale_center_to_shell_y - math.sqrt( sqrt_arg ) )*(scale_center_to_shell_y - math.sqrt( sqrt_arg ) )
+
+                            # TODO TESTING REMOVE THIS WHEN DONE
+                            #log.debug( "***** ROOTFINDER CALL: Calling r1_eq() with: *****" )
+                            #log.debug( "  r1 = %s, value = %s" % (x, eq_value ) )
+                            #log.debug( "  h1 = %s" % (z1_function(x)) )
+
+                            return eq_value
+
+                        # To ensure that we always search on an interval within which r1_eq() contains only one zero root
+                        # we enlarge the rootfinder interval, starting from safe bounds, towards the bounds beyond which we
+                        # know there are unwanted solutions. We stop the enlargement when function r1_eq() certainly 
+                        # changes sign within the interval.
+                        # We use a multiplicative factor tau to enlarge the domain. tau is set such that 
+                        # (1-tau)*r1_interval_max - (1+tau)*r1_interval_min >= 0.5*(r1_interval_max-r1_interval_min)
+                        # in order to ensure that the interval is nonzero and positive in the first iteration.
+
+                        # Set some repeating and default values
+                        # r1_interval min, r1_interval_max are the outer interval bounds for which there is only one root
+                        r1_interval_min = scale_center_to_shell_edge_x
+                        r1_interval_max = math.sqrt( scale_center_to_shell_y*scale_center_to_shell_y + \
+                                                        scale_center_to_shell_edge_x*scale_center_to_shell_edge_x )
+                        r1_interval_start = r1_interval_min
+                        r1_interval_end   = r1_interval_max
+                        # Set the enlargement factor; we want it to be at least as small as TOLERANCE
+                        tau = min(TOLERANCE, 0.5*(r1_interval_max-r1_interval_min)/(r1_interval_max+r1_interval_min))
+                        assert tau>0.0 and tau<1.0
+
+                        # Start the iteration
+                        n=1
+                        nmax=100
+                          # Since tau is very small, the iteration hardly ever should get to nmax; but to be safe...
+                        r1_eq_product = 1
+                        while r1_eq_product > 0.0:
+
+                            r1_interval_start = (1.0+tau**n) * r1_interval_min
+                            r1_interval_end   = (1.0-tau**n) * r1_interval_max
+                            r1_eq_product     = r1_eq(r1_interval_start) * r1_eq(r1_interval_end)
+                            
+                            n = n+1
+
+                            if n>nmax:
+                                raise testShellError('get_dr_dzright_dzleft_to_CylindricalShape: Could not find suitable rootfinder boundaries in EDGE_HITS_EDGE cylinder scaling. nmax=%s' % str(nmax) )
+
+                        # Non-adaptive version; TODO Remove this after TESTING
+                        #r1_interval_start = scale_center_to_shell_edge_x
+                        #r1_interval_end   = math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2 )
+                        assert(r1_interval_start >= 0), 'r1_interval_start = %s, n_iterations=%s' % (r1_interval_start, n)
+                        assert(r1_interval_end   >= r1_interval_start), 'r1_interval_start = %s, r1_interval_end=%s, n_iterations=%s' % (r1_interval_start, r1_interval_end, n)
+
+                        # TODO TESTING REMOVE THIS WHEN DONE
+                        #print "***** NEW ROOTFINDER ITERATION *****"
+                        #print "  Dy-r2 = %s" % (scale_center_to_shell_y-shell_radius)
+                        #print "  Dx-h2 = %s" % scale_center_to_shell_edge_x
+                        #print "  r1_interval_start = %s" % r1_interval_start
+                        #print "  r1_interval_end = %s"   % r1_interval_end
+                        #print "  r1(i_start) = %s"       % r1_eq(scale_center_to_shell_edge_x)
+                        #print "  r1(i_end) = %s"         % r1_eq(math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2))
+
+                        # Finally, start the rootfinding
+                        r_touch = findroot(r1_eq, r1_interval_start, r1_interval_end)
+                                  
+                        r_new  = min(r, r_touch)
+                        z1_new = min(z1, z1_function(r_new))
+
+
+            elif situation == BARREL_HITS_EDGE:
+                # the scaling cylinder hits the edge of 'shell' with its barrel side
+                r_new = min(r, math.sqrt( (ref_to_shell_x-shell_half_length)*(ref_to_shell_x-shell_half_length) \
+                                          + (ref_to_shell_y - shell_radius)*(ref_to_shell_y - shell_radius)))
+                z1_new = min(z1, z1_function(r_new))
+
+            elif situation == FLAT_HITS_BARREL:
+                # the scaling cylinder hits the barrel of 'shell' with its top flat side
+                z1_new = min(z1, (ref_to_shell_z - shell_radius))
+                r_new  = min(r,  r1_function(z1_new))
+
+            elif situation == EDGE_HITS_BARREL:
+                # the scaling cylinder hits the barrel of 'shell' with its edge
+                shell_radius_sq = shell_radius*shell_radius
+
+                # If scale_angle == 0, the scale center is offset from the reference point,
+                # located at the barrel of the scaled cylinder. In order for the below calculation
+                # to succeed we have to take this into account. In general scale_center_r == 0
+                # so that this step only affects the scale_angle == 0 cases:
+                scale_center_to_shell_y -= scale_center_r
+
+                ss_sq = (scale_center_to_shell_z*scale_center_to_shell_z + scale_center_to_shell_y*scale_center_to_shell_y)
+                scale_center_to_shell = math.sqrt(ss_sq)
+
+                shell_angle_yz = math.atan(scale_center_to_shell_y/scale_center_to_shell_z)
+                angle_diff = abs(shell_angle_yz - scale_angle)
+                sin_angle_diff = math.sin(angle_diff)
+                cos_angle_diff = math.cos(angle_diff)
+                
+                assert scale_center_to_shell >= shell_radius # should never fail
+
+                ss_angle = math.pi - math.asin(math.sin(angle_diff)*scale_center_to_shell/shell_radius)
+                assert(ss_angle >= math.pi/2.0), 'EDGE_HITS_BARREL: ss_angle must be >= Pi/2.0; ss_angle = %s' % str(ss_angle)
+                        # We know that this angle must be larger than Pi/2 here by construction of the problem
+
+                scale_center_shell_dist = shell_radius * math.sin(math.pi-(angle_diff+ss_angle)) / math.sin(angle_diff)
+                assert scale_center_shell_dist>0, 'EDGE_HITS_BARREL: scale_center_shell_dist not positive, scale_center_shell_dist = %s'\
+                                                  % str(scale_center_shell_dist)
+
+                # Check whether the calculated distance is within the forseen bounds and warn if not
+                if scale_center_shell_dist > math.sqrt(scale_center_to_shell_y*scale_center_to_shell_y \
+                                                      + scale_center_to_shell_z*scale_center_to_shell_z) * (1.0+TOLERANCE):
+                    log.warning('Orthogonal cylinder scaling, EDGE_HITS_BARREL case: scale-center-to-shell distance is out of foreseen bounds:')
+                    log.warning('   distance=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s' \
+                                % (scale_center_shell_dist, scale_center_to_shell_y, scale_center_to_shell_z) )
 
                 if scale_angle <= Pi/4.0:
-
-                    def h1_eq(x):
-
-                        #rhs = (scale_center_to_shell_z - \
-                              #math.sqrt(shell_radius**2 - (scale_center_to_shell_y - math.sqrt( (x*tan_scale_angle)**2 - (scale_center_to_shell_x - shell_half_length)**2 ) )**2 ) )
-
-                        # TODO TESTING REMOVE THIS WHEN DONE
-                        #log.debug( "***** ROOTFINDER CALL: Calling h1_eq() with: *****" )
-                        #log.debug( "  r1 = %s" % (r1_function(x+scale_center_z)) )
-                        #log.debug( "  sqrt_arg = %s" % ((x*tan_scale_angle)**2 - scale_center_to_shell_edge_x**2) )
-                        #log.debug( "    tan_scale_angle = %s" % (tan_scale_angle) )
-                        #log.debug( "    x*tan_scale_angle = %s" % (x*tan_scale_angle) )
-                        #log.debug( "    scale_center_to_shell_edge_x = %s" % scale_center_to_shell_edge_x )
-
-                        # We will take the square root of the following below
-                        sqrt_arg = (x*tan_scale_angle)*(x*tan_scale_angle) - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x
-
-                        if sqrt_arg < 0.0 and abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x:
-
-                            sqrt_arg = 0.0      # This safety check is to prevent math domain errors
-                                                # in case sqrt_arg is close to zero and taking the
-                                                # difference results in very small negative numbers
-                            log.warn('Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.')
-
-                        eq_value = (scale_center_to_shell_z - x)*(scale_center_to_shell_z - x) - shell_radius_sq +\
-                                      (scale_center_to_shell_y - math.sqrt( sqrt_arg ))*(scale_center_to_shell_y - math.sqrt( sqrt_arg ))
-                        
-                        # TODO TESTING REMOVE THIS WHEN DONE                    
-                        #log.debug( "  h1 = %s, value = %s" % (x, eq_value ) )
-
-                        return eq_value
-
-                    # To ensure that we always search on an interval within which h1_eq() contains only one zero root
-                    # we enlarge the rootfinder interval, starting from safe bounds, towards the bounds beyond which we
-                    # know there are unwanted solutions. We stop the enlargement when function h1_eq() certainly 
-                    # changes sign within the interval.
-                    # We use a multiplicative factor tau to enlarge the domain. tau is set such that 
-                    # (1-tau)*h1_interval_max - (1+tau)*h1_interval_min >= 0.5*(h1_interval_max-h1_interval_min)
-                    # in order to ensure that the interval is nonzero and positive in the first iteration.
-
-                    # Set some repeating and default values
-                    # r1_interval min, r1_interval_max are the outer interval bounds for which there is only one root
-                    h1_interval_min = z1_function(scale_center_to_shell_edge_x) - scale_center_z
-                    h1_interval_max = z1_function( math.sqrt( scale_center_to_shell_y*scale_center_to_shell_y + \
-                                                      scale_center_to_shell_edge_x*scale_center_to_shell_edge_x ) ) - scale_center_z
-                    h1_interval_start = h1_interval_min
-                    h1_interval_end   = h1_interval_max
-                    # Set the enlargement factor; we want it to be at least as small as TOLERANCE
-                    tau = min(TOLERANCE, 0.5*(h1_interval_max-h1_interval_min)/(h1_interval_max+h1_interval_min))
-                    assert tau>0.0 and tau<1.0
-
-                    # Start the iteration
-                    n=1
-                    nmax=100
-                      # Since tau is very small, the iteration hardly ever should get to nmax; but to be safe...
-                    h1_eq_product = 1                    
-                    while h1_eq_product > 0.0:
-
-                        h1_interval_start = (1.0+tau**n) * h1_interval_min
-                        h1_interval_end   = (1.0-tau**n) * h1_interval_max
-                        h1_eq_product     = h1_eq(h1_interval_start) * h1_eq(h1_interval_end)
-
-                        n = n+1
-
-                        if n>nmax:
-                            raise testShellError('get_dr_dzright_dzleft_to_CylindricalShape: Could not find suitable rootfinder boundaries in EDGE_HITS_EDGE cylinder scaling. nmax=%s' % str(nmax) )
-
-                    assert(h1_interval_start >= 0)
-                    assert(h1_interval_end   >= h1_interval_end)
-
-                    # TODO TESTING REMOVE THIS WHEN DONE
-                    #log.debug( "***** NEW ROOTFINDER ITERATION *****" )
-                    #log.debug( "  Dy-r2 = %s" % (scale_center_to_shell_y-shell_radius) )
-                    #log.debug( "  Dx-h2 = %s" % scale_center_to_shell_edge_x )
-                    #log.debug( "  h1_interval_start = %s" % h1_interval_start )
-                    #log.debug( "  h1_interval_end = %s"   % h1_interval_end )
-                    #log.debug( "  h1(i_start) = %s"       % h1_eq(h1_interval_start) )
-                    #log.debug( "  h1(i_end) = %s"         % h1_eq(h1_interval_end) )
-
-                    # Finally, start the rootfinding
-                    h_touch = scale_center_z + findroot(h1_eq, h1_interval_start, h1_interval_end)
-                    z1_new = min(z1, h_touch)
-                    r_new  = min(r,  r1_function(z1_new))
-
+                    cos_scale_angle = math.cos(scale_angle)
+                    z1_new = min(z1, (scale_center_z + cos_scale_angle * scale_center_shell_dist))
+                    r_new  = min(r, r1_function(z1_new))
                 else:
-                    # This uses the same rootfinding equation and interval as above with r1=h1/tan_scale_angle
-                    # instead of h1; notice that scale_angle > 0 here, so we can divide by it
-                    def r1_eq(x):
-
-                        # We will take the square root of the following below
-                        sqrt_arg = x*x - scale_center_to_shell_edge_x*scale_center_to_shell_edge_x
-
-                        if sqrt_arg < 0.0 and abs(sqrt_arg) <= TOLERANCE*scale_center_to_shell_edge_x*scale_center_to_shell_edge_x:
-
-                            sqrt_arg = 0.0      # This safety check is to prevent math domain errors
-                                                # in case sqrt_arg is close to zero and taking the
-                                                # difference results in very small negative numbers
-                            log.warn('Orthogonal cylinder scaling, EDGE_HITS_EDGE case: Setting negative sqrt argument to zero within TOLERANCE.')
-
-                        eq_value = (scale_center_to_shell_z - x/tan_scale_angle)*(scale_center_to_shell_z - x/tan_scale_angle) - shell_radius_sq +\
-                                      (scale_center_to_shell_y - math.sqrt( sqrt_arg ) )*(scale_center_to_shell_y - math.sqrt( sqrt_arg ) )
-
-                        # TODO TESTING REMOVE THIS WHEN DONE
-                        #log.debug( "***** ROOTFINDER CALL: Calling r1_eq() with: *****" )
-                        #log.debug( "  r1 = %s, value = %s" % (x, eq_value ) )
-                        #log.debug( "  h1 = %s" % (z1_function(x)) )
-
-                        return eq_value
-
-                    # To ensure that we always search on an interval within which r1_eq() contains only one zero root
-                    # we enlarge the rootfinder interval, starting from safe bounds, towards the bounds beyond which we
-                    # know there are unwanted solutions. We stop the enlargement when function r1_eq() certainly 
-                    # changes sign within the interval.
-                    # We use a multiplicative factor tau to enlarge the domain. tau is set such that 
-                    # (1-tau)*r1_interval_max - (1+tau)*r1_interval_min >= 0.5*(r1_interval_max-r1_interval_min)
-                    # in order to ensure that the interval is nonzero and positive in the first iteration.
-
-                    # Set some repeating and default values
-                    # r1_interval min, r1_interval_max are the outer interval bounds for which there is only one root
-                    r1_interval_min = scale_center_to_shell_edge_x
-                    r1_interval_max = math.sqrt( scale_center_to_shell_y*scale_center_to_shell_y + \
-                                                    scale_center_to_shell_edge_x*scale_center_to_shell_edge_x )
-                    r1_interval_start = r1_interval_min
-                    r1_interval_end   = r1_interval_max
-                    # Set the enlargement factor; we want it to be at least as small as TOLERANCE
-                    tau = min(TOLERANCE, 0.5*(r1_interval_max-r1_interval_min)/(r1_interval_max+r1_interval_min))
-                    assert tau>0.0 and tau<1.0
-
-                    # Start the iteration
-                    n=1
-                    nmax=100
-                      # Since tau is very small, the iteration hardly ever should get to nmax; but to be safe...
-                    r1_eq_product = 1
-                    while r1_eq_product > 0.0:
-
-                        r1_interval_start = (1.0+tau**n) * r1_interval_min
-                        r1_interval_end   = (1.0-tau**n) * r1_interval_max
-                        r1_eq_product     = r1_eq(r1_interval_start) * r1_eq(r1_interval_end)
-                        
-                        n = n+1
-
-                        if n>nmax:
-                            raise testShellError('get_dr_dzright_dzleft_to_CylindricalShape: Could not find suitable rootfinder boundaries in EDGE_HITS_EDGE cylinder scaling. nmax=%s' % str(nmax) )
-
-                    # Non-adaptive version; TODO Remove this after TESTING
-                    #r1_interval_start = scale_center_to_shell_edge_x
-                    #r1_interval_end   = math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2 )
-                    assert(r1_interval_start >= 0), 'r1_interval_start = %s, n_iterations=%s' % (r1_interval_start, n)
-                    assert(r1_interval_end   >= r1_interval_start), 'r1_interval_start = %s, r1_interval_end=%s, n_iterations=%s' % (r1_interval_start, r1_interval_end, n)
-
-                    # TODO TESTING REMOVE THIS WHEN DONE
-                    #print "***** NEW ROOTFINDER ITERATION *****"
-                    #print "  Dy-r2 = %s" % (scale_center_to_shell_y-shell_radius)
-                    #print "  Dx-h2 = %s" % scale_center_to_shell_edge_x
-                    #print "  r1_interval_start = %s" % r1_interval_start
-                    #print "  r1_interval_end = %s"   % r1_interval_end
-                    #print "  r1(i_start) = %s"       % r1_eq(scale_center_to_shell_edge_x)
-                    #print "  r1(i_end) = %s"         % r1_eq(math.sqrt( scale_center_to_shell_y**2 + scale_center_to_shell_edge_x**2))
-
-                    # Finally, start the rootfinding
-                    r_touch = findroot(r1_eq, r1_interval_start, r1_interval_end)
-                              
-                    r_new  = min(r, r_touch)
+                    sin_scale_angle = math.sin(scale_angle)
+                    r_new  = min(r,  (scale_center_r + sin_scale_angle * scale_center_shell_dist))
                     z1_new = min(z1, z1_function(r_new))
 
+            elif situation == BARREL_HITS_BARREL:
+                # The scaling cylinder hits the barrel of 'shell' with its barrel
+                if scale_angle == 0.0:
+                    # In this case the cylinders can never hit; just leave the lenghts as they are
+                    r_new = r
+                    z1_new = z1
+                else:
+                    # case scale_angle > 0
+                    r_new = min(r, (ref_to_shell_y - shell_radius))
+                    z1_new = min(z1, z1_function(r_new))
 
-        elif situation == BARREL_HITS_EDGE:
-            # the scaling cylinder hits the edge of 'shell' with its barrel side
-            r_new = min(r, math.sqrt( (ref_to_shell_x-shell_half_length)*(ref_to_shell_x-shell_half_length) \
-                                      + (ref_to_shell_y - shell_radius)*(ref_to_shell_y - shell_radius)))
-            z1_new = min(z1, z1_function(r_new))
-
-        elif situation == FLAT_HITS_BARREL:
-            # the scaling cylinder hits the barrel of 'shell' with its top flat side
-            z1_new = min(z1, (ref_to_shell_z - shell_radius))
-            r_new  = min(r,  r1_function(z1_new))
-
-        elif situation == EDGE_HITS_BARREL:
-            # the scaling cylinder hits the barrel of 'shell' with its edge
-            shell_radius_sq = shell_radius*shell_radius
-
-            # If scale_angle == 0, the scale center is offset from the reference point,
-            # located at the barrel of the scaled cylinder. In order for the below calculation
-            # to succeed we have to take this into account. In general scale_center_r == 0
-            # so that this step only affects the scale_angle == 0 cases:
-            scale_center_to_shell_y -= scale_center_r
-
-            ss_sq = (scale_center_to_shell_z*scale_center_to_shell_z + scale_center_to_shell_y*scale_center_to_shell_y)
-            scale_center_to_shell = math.sqrt(ss_sq)
-
-            shell_angle_yz = math.atan(scale_center_to_shell_y/scale_center_to_shell_z)
-            angle_diff = abs(shell_angle_yz - scale_angle)
-            sin_angle_diff = math.sin(angle_diff)
-            cos_angle_diff = math.cos(angle_diff)
-            
-            assert scale_center_to_shell >= shell_radius # should never fail
-
-            ss_angle = math.pi - math.asin(math.sin(angle_diff)*scale_center_to_shell/shell_radius)
-            assert(ss_angle >= math.pi/2.0), 'EDGE_HITS_BARREL: ss_angle must be >= Pi/2.0; ss_angle = %s' % str(ss_angle)
-                    # We know that this angle must be larger than Pi/2 here by construction of the problem
-
-            scale_center_shell_dist = shell_radius * math.sin(math.pi-(angle_diff+ss_angle)) / math.sin(angle_diff)
-            assert scale_center_shell_dist>0, 'EDGE_HITS_BARREL: scale_center_shell_dist not positive, scale_center_shell_dist = %s'\
-                                              % str(scale_center_shell_dist)
-
-            # Check whether the calculated distance is within the forseen bounds and warn if not
-            if scale_center_shell_dist > math.sqrt(scale_center_to_shell_y*scale_center_to_shell_y \
-                                                   + scale_center_to_shell_z*scale_center_to_shell_z) * (1.0+TOLERANCE):
-                log.warning('Orthogonal cylinder scaling, EDGE_HITS_BARREL case: scale-center-to-shell distance is out of foreseen bounds:')
-                log.warning('   distance=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s' \
-                             % (scale_center_shell_dist, scale_center_to_shell_y, scale_center_to_shell_z) )
-
-            if scale_angle <= Pi/4.0:
-                cos_scale_angle = math.cos(scale_angle)
-                z1_new = min(z1, (scale_center_z + cos_scale_angle * scale_center_shell_dist))
-                r_new  = min(r, r1_function(z1_new))
             else:
-                sin_scale_angle = math.sin(scale_angle)
-                r_new  = min(r,  (scale_center_r + sin_scale_angle * scale_center_shell_dist))
-                z1_new = min(z1, z1_function(r_new))
-
-        elif situation == BARREL_HITS_BARREL:
-            # The scaling cylinder hits the barrel of 'shell' with its barrel
-            if scale_angle == 0.0:
-                # In this case the cylinders can never hit; just leave the lenghts as they are
-                r_new = r
-                z1_new = z1
-            else:
-                # case scale_angle > 0
-                r_new = min(r, (ref_to_shell_y - shell_radius))
-                z1_new = min(z1, z1_function(r_new))
+                raise RuntimeError('get_dr_dzright_dzleft_to_CylindricalShape: Bad situation for making cylinders against cylinders.')
 
         else:
-            raise RuntimeError('get_dr_dzright_dzleft_to_CylindricalShape: Bad situation for making cylinders against cylinders.')
+            raise NotImplementedError('get_dr_dzright_dzleft_to_CylindricalShape: Cylinders should be oriented parallel or perpendicular.')
 
-    else:
-        raise NotImplementedError('get_dr_dzright_dzleft_to_CylindricalShape: Cylinders should be oriented parallel or perpendicular.')
-
-    z2_new = min(z2, z2_function(r_new))
+        z2_new = min(z2, z2_function(r_new))
 
 
-    # Print a comparison between the old (Python-based) and new (C++-based) results
-    if abs( (r_new-r_new_c)/r_new_c ) > 0.01 or abs( (z1_new-z1_new_c)/z1_new_c ) > 0.01 or abs( (z2_new-z2_new_c)/z2_new_c ) > 0.01 \
-    or abs( (r_new-r_new_c)/r_new )   > 0.01 or abs( (z1_new-z1_new_c)/z1_new )   > 0.01 or abs( (z2_new-z2_new_c)/z2_new )   > 0.01 :
+    ## Print a comparison between the old (Python-based) and new (C++-based) results
+    #if abs( (r_new-r_new_c)/r_new_c ) > 0.01 or abs( (z1_new-z1_new_c)/z1_new_c ) > 0.01 or abs( (z2_new-z2_new_c)/z2_new_c ) > 0.01 \
+    #or abs( (r_new-r_new_c)/r_new )   > 0.01 or abs( (z1_new-z1_new_c)/z1_new )   > 0.01 or abs( (z2_new-z2_new_c)/z2_new )   > 0.01 :
 
-        log.warn("SHELLSCALING COMPARISON NOT MACHING!")
-        log.warn("Python : r_new = %s, z1_new = %s, z2_new = %s" % (r_new, z1_new, z2_new) )
-        log.warn("C++    : r_new = %s, z1_new = %s, z2_new = %s" % (r_new_c, z1_new_c, z2_new_c) )
+        #log.warning("SHELLSCALING COMPARISON NOT MATCHING!")
+        #log.warning("Python : r_new = %s, z1_new = %s, z2_new = %s" % (r_new, z1_new, z2_new) )
+        #log.warning("C++    : r_new = %s, z1_new = %s, z2_new = %s" % (r_new_c, z1_new_c, z2_new_c) )
+
+    if calculation_mode == "C++":
+
+        r_new = r_new_c
+        z1_new = z1_new_c
+        z2_new = z2_new_c
 
     # switch the z values in case it's necessary. r doesn't have to be switched.
     r = r_new

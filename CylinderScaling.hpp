@@ -177,7 +177,7 @@ class CylinderScalingHelperTools
         
         else
           log_.warn("Shells seem neither parallel nor orthogonal in CylindricaltestShell scaling routine: relative_orientation = %.6e", relative_orientation);
-          //throw unsupported("Shells are neither parallel nor orthogonal in CylindricaltestShell scaling routine."); // FIXME        
+          //throw unsupported("Shells are neither parallel nor orthogonal in CylindricaltestShell scaling routine."); // FIXME decide for one version
     };
     
     // TESTING methods; to test whether scaling functions passed to this class
@@ -613,7 +613,7 @@ class CylinderScalingHelperTools
       // Some commonly used values
       length_type otherShell_radius_sq( otherShell_radius*otherShell_radius );
       
-      log_.info("C++: Handling specific collision in orthogonal cylinder scaling...");  // TESTING
+      //log_.info("C++: Handling specific collision in orthogonal cylinder scaling...");  // TESTING
       
       switch(collision_situation)
       {
@@ -730,7 +730,7 @@ class CylinderScalingHelperTools
                   if(scale_angle <= M_PI/4.0)
                   {                    
                    
-                    log_.info("C++: Entering rootfinding, scale_angle <= M_PI/4.0 (finding h1)");  // TESTING
+                    //log_.info("C++: Entering rootfinding, scale_angle <= M_PI/4.0 (finding h1)");  // TESTING
                                                                             
                     // Pack function and parameters into the format required by GSL
                     F.function = reinterpret_cast<typeof(F.function)>( &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq );
@@ -842,7 +842,7 @@ class CylinderScalingHelperTools
                   }
                   else // if scale_angle > M_PI/4.0
                   {
-                    log_.info("C++: Entering rootfinding, scale_angle > M_PI/4.0 (finding r1)");  // TESTING                                        
+                    //log_.info("C++: Entering rootfinding, scale_angle > M_PI/4.0 (finding r1)");  // TESTING                                        
                                                         
                     // Pack function and parameters into the format required by GSL
                     F.function = reinterpret_cast<typeof(F.function)>( &CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_r1_eq );
@@ -1090,7 +1090,7 @@ class CylinderScalingHelperTools
         // Calculates the new testShell dimensions when scaled with respect
         // to another shell that is parallel in orientation
         
-        log_.info("C++: Handling parallel cylinder collision...");  // TESTING
+        //log_.info("C++: Handling parallel cylinder collision...");  // TESTING
         
         length_type r_new(r), z1_new(z1), z2_new(z2); // TODO what happens with z2_new?
         
