@@ -795,50 +795,68 @@ def load_state(filename):
     # Here we first read in all the connections and then figure out which sides are
     # connected in order to actually connect them.
     sc_sections = filter_sections(cp.sections(), 'STRUCTURECONNECTION')
-    for sectionname in sorted(sc_sections, key = lambda name : name_to_int(name)):
 
-        to_connect_id = name_to_int(sectionname)
+    if sc_sections:
 
-        neighbor_id_0 = cp.getint(sectionname, 'neighbor_id_0')
-        neighbor_id_1 = cp.getint(sectionname, 'neighbor_id_1')
-        neighbor_id_2 = cp.getint(sectionname, 'neighbor_id_2')
-        neighbor_id_3 = cp.getint(sectionname, 'neighbor_id_3')
+        for sectionname in sorted(sc_sections, key = lambda name : name_to_int(name)):
 
-        connections_dict[to_connect_id] = [neighbor_id_0, neighbor_id_1, \
-                                           neighbor_id_2, neighbor_id_3] 
+            to_connect_id = name_to_int(sectionname)
 
-    # Figure out which sides are connected
-    connections = []
-    for to_connect_id, neighbor_list in connections_dict.iteritems():
+            neighbor_id_0 = cp.getint(sectionname, 'neighbor_id_0')
+            neighbor_id_1 = cp.getint(sectionname, 'neighbor_id_1')
+            neighbor_id_2 = cp.getint(sectionname, 'neighbor_id_2')
+            neighbor_id_3 = cp.getint(sectionname, 'neighbor_id_3')
 
-        # For each neighbor_id find the side with which the neighbor is
-        # connected to the structure with con_id
-        for side in range(0,4):
+            connections_dict[to_connect_id] = [neighbor_id_0, neighbor_id_1, \
+                                              neighbor_id_2, neighbor_id_3] 
 
-            n_id = neighbor_list[side]
-            nn_list = connections_dict[n_id]
+        # Figure out which sides are connected
+        connections = []
 
-            for n_side in range(0,4):
+        if any([ to_connect_id==i for i in connections_dict[to_connect_id] ]):
+
+            # Drop a warning in case someone tries to connect a plane to itself (currently unsupported)
+            log.warn('  Avoiding connecting plane to itself. This may result in incorrectly applied boundary conditions and further errors!')
+
+        else:
             
-                nn_id = nn_list[n_side]
-                if nn_id == to_connect_id:
-                # We have found the neighbor_id that links to con_id
-                    connections.append( (to_connect_id, side, n_id, n_side) )
-                    break
+            # Everything fine, find the connections
+            for to_connect_id, neighbor_list in connections_dict.iteritems():
 
-    if __debug__:
-        log.info('  connections = %s' % str(connections) )
+                # For each neighbor_id find the side with which the neighbor is
+                # connected to the structure with con_id
+                for side in range(0,4):
 
-    # Establish the connections
-    for struct_id0, side0, struct_id1, side1 in connections:
+                    n_id = neighbor_list[side]
+                    nn_list = connections_dict[n_id]
 
-        struct0 = structures_dict[struct_id0]
-        struct1 = structures_dict[struct_id1]
+                    for n_side in range(0,4):
+                    
+                        nn_id = nn_list[n_side]
+                        if nn_id == to_connect_id:
+                        # We have found the neighbor_id that links to con_id
+                            connections.append( (to_connect_id, side, n_id, n_side) )
+                            break        
 
-        w.connect_structures(struct0, side0, struct1, side1)
         if __debug__:
-            log.info('  Connected side %s of structure %s (id=%s) with side %s of structure %s (id=%s)' \
-                     % (side0, struct0, struct0.id, side1, struct1, struct1.id) )
+            log.info('  connections = %s' % str(connections) )
+
+        # Establish the connections
+        for struct_id0, side0, struct_id1, side1 in connections:
+
+            struct0 = structures_dict[struct_id0]
+            struct1 = structures_dict[struct_id1]
+
+            w.connect_structures(struct0, side0, struct1, side1)
+            if __debug__:
+                log.info('  Connected side %s of structure %s (id=%s) with side %s of structure %s (id=%s)' \
+                        % (side0, struct0, struct0.id, side1, struct1, struct1.id) )
+
+    else: # sc_sections empty
+
+        if __debug__:
+            log.info('  No connections found in input file.')
+
 
     #### PARTICLES ####
     if __debug__:

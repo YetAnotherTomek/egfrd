@@ -664,10 +664,15 @@ class PlanarSurfaceTransitionPair(SimplePair, hasSphericalShell):
     @ classmethod
     def do_back_transform(cls, com, iv, D1, D2, radius1, radius2, structure1, structure2, unit_z, world):
 
-        # structure should be = structure1, but for safety we use the structures
-        # inherited from the test shell
+        # This function is called every time a PlanarSurfaceSingle dissociates. Sometimes this may
+        # require to deflect the particle towards an orthogonal neighboring plane. Then an additional
+        # seperation factor is applied to the interparticle vector to overcome predictable overlaps.
+        #
+        # Note that this function also is called when singles dissociate on one single plane
+        # in periodic boundary conditions. An extra check prevents that the correction factor
+        # is erronously applied in these cases.
 
-        # Calculate the new positions (still in structure1)
+        # Calculate the new positions (should be still in structure1)
         D_tot = D1 + D2
         pos1 = com - iv * (D1 / D_tot)
         pos2 = com + iv * (D2 / D_tot)
@@ -676,17 +681,21 @@ class PlanarSurfaceTransitionPair(SimplePair, hasSphericalShell):
         # In some cases the new positions may end up on adjacent planar surfaces.
         # This may lead to an overlap which has to be checked for and removed if present
         # in the next step.
+        # Note that this will be also done for unconnected planes, so it has to be
+        # made sure that apply_boundary does work correctly in these cases.
         new_pos1, new_sid1 = world.apply_boundary((pos1, structure1.id))
-        new_pos2, new_sid2 = world.apply_boundary((pos2, structure1.id))
+        new_pos2, new_sid2 = world.apply_boundary((pos2, structure1.id))        
+
+        new_structure1 = world.get_structure(new_sid1)
+        new_structure2 = world.get_structure(new_sid2)
 
         # If the new positions lead to an overlap we have to enlarge the IV by a safety factor
-        if world.distance(new_pos1, new_pos2) <= (radius1+radius2) * MINIMAL_SEPARATION_FACTOR :
+        # Only to this correction if the two planes are really orthogonal (assumed in the calculation)
+        if  world.distance(new_pos1, new_pos2) <= (radius1+radius2) * MINIMAL_SEPARATION_FACTOR \
+        and feq( numpy.dot(new_structure1.shape.unit_z, new_structure2.shape.unit_z), 0.0 ) :
 
-            log.warn('Removing overlap in PlanarSurfaceTransitionPair')
-
-            new_structure1 = world.get_structure(new_sid1)
-            new_structure2 = world.get_structure(new_sid2)
-
+            log.warn('do_back_transform: Removing overlap resulting from deflection of particles at the edge of orthogonal planes.')
+            
             # Calculate the distances from the two new positions to the edge between the planes
             # in which the particles temporarily ended up
             # This is easily done by projecting new_pos1 into new_structure2 + vice versa and

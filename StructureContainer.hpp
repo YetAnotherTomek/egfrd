@@ -3,6 +3,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include "exceptions.hpp"
+#include "Logger.hpp"
 #include "linear_algebra.hpp"
 #include "ConnectivityContainer.hpp"
 #include "CuboidalRegion.hpp"
@@ -140,7 +141,7 @@ public:
         if ( update_structure_base(structid_plane))
         {
             // We now assume that the structure was not already in the boundary_conditions_thing
-            // add to Connectivity container for planar surfaces and set reflective boundary conditions.
+            // add to Connectivity container for planar surfaces and set *reflective* boundary conditions. // TODO This may cause many problems in single reactions!!! Overthink!!!
             planar_structs_bc_.set_neighbor_info(structid_plane.first, 0, std::make_pair(structid_plane.first, multiply(structid_plane.second->shape().unit_y(), -1.0) ));
             planar_structs_bc_.set_neighbor_info(structid_plane.first, 1, std::make_pair(structid_plane.first,          structid_plane.second->shape().unit_y() ));
             planar_structs_bc_.set_neighbor_info(structid_plane.first, 2, std::make_pair(structid_plane.first,          structid_plane.second->shape().unit_x() ));
@@ -366,18 +367,27 @@ protected:
     cylindrical_surface_bc_type cylindrical_structs_bc_;
     planar_surface_bc_type      planar_structs_bc_;
     cuboidal_region_bc_type     cuboidal_structs_bc_;
-};
+    static Logger&              log_;
+    
+}; // end of class definition
 
+
+//////// Link logger to the global logging system
+template <typename Tobj_, typename Tid_, typename Ttraits_>
+Logger& StructureContainer<Tobj_, Tid_, Ttraits_>::log_(Logger::get_logger("ecell.newBDPropagator"));
+//////// Also define one that can be used by the inline functions below
+static Logger& log_(Logger::get_logger("ecell.newBDPropagator"));
 
 
 //////// Inline functions applicable to the StructureContainer
-
 //// functions for Planes
 template<typename Ttraits_ >
 inline std::pair<typename Ttraits_::position_type, typename Ttraits_::structure_id_type>
-apply_boundary (std::pair<typename Ttraits_::position_type, typename Ttraits_::structure_id_type> const& pos_structure_id,
-                PlanarSurface<Ttraits_> const& planar_surface,
-                StructureContainer<typename Ttraits_::structure_type, typename Ttraits_::structure_id_type, Ttraits_> const& sc)
+apply_boundary (std::pair<typename Ttraits_::position_type,
+                          typename Ttraits_::structure_id_type> const&                     pos_structure_id,
+                PlanarSurface<Ttraits_> const&                                             planar_surface,
+                StructureContainer<typename Ttraits_::structure_type, 
+                                   typename Ttraits_::structure_id_type, Ttraits_> const&  sc)
 // The template needs to be parameterized with the appropriate shape (which then parameterizes the type
 // of the ConnectivityContainer that we use.
 // We supply the structure container as an argument so that we can get the structures that we need, and to
@@ -397,18 +407,31 @@ apply_boundary (std::pair<typename Ttraits_::position_type, typename Ttraits_::s
     // Note that we assume that the new position is in the plane (dot(pos, unit_z)==0)
     // and that the position is already transposed for the plane.
     const plane_type origin_plane( planar_surface.shape() );
-    boost::array<length_type, 2> half_extents( origin_plane.half_extent() );
+    const boost::array<length_type, 2> half_extents( origin_plane.half_extent() );
 
     const position_type pos_vector( subtract(pos_structure_id.first, origin_plane.position()) );
-    const length_type component_x ( dot_product(pos_vector, origin_plane.unit_x()) );
-    const length_type component_y ( dot_product(pos_vector, origin_plane.unit_y()) );
+    const length_type   component_x ( dot_product(pos_vector, origin_plane.unit_x()) );
+    const length_type   component_y ( dot_product(pos_vector, origin_plane.unit_y()) );
 
     // declare the variables that will be written
-    structure_id_type new_id(pos_structure_id.second);
-    position_type neighbor_plane_par;
-    position_type neighbor_plane_inl;
-
-    if ( abs(component_x) <= half_extents[0] && abs(component_y) <= half_extents[1] )
+    structure_id_type new_id( pos_structure_id.second );
+    position_type     neighbor_plane_par;
+    position_type     neighbor_plane_inl;
+    
+    // Check for (currently unsupported) self-connections
+    for( int i=0; i<4; i++ )
+    {
+        const neighbor_id_vector_type neighbor_id_vector (sc.get_neighbor_info(planar_surface, 0));
+        new_id = neighbor_id_vector.first;
+        
+        if( new_id == pos_structure_id.second )
+        {
+            log_.warn("Plane is connected to itself, which is unsupported; no boundary condition will be applied at this call.");
+            return pos_structure_id;
+        }
+    };
+    
+    if( (abs(component_x) <= half_extents[0] && abs(component_y) <= half_extents[1]) )
     {
         // we are still in the plane (did not pass any of the boundaries)
         // don't have to do anything
@@ -469,7 +492,9 @@ apply_boundary (std::pair<typename Ttraits_::position_type, typename Ttraits_::s
         const position_type new_pos ( add(origin_plane.position(), add(neighbor_plane_par, neighbor_plane_inl)));
 
         // Check if we are in one of the corners. If yes -> do another round of border crossing from neighboring plane.
-        if ( abs(component_x) > half_extents[0] && abs(component_y) > half_extents[1] )
+        // Only do this if the particle does not end up on another side of the same plane (the scenario of one plane 
+        // with periodic BCs), as this may cause infinite loops.
+        if( not new_id==pos_structure_id.second && abs(component_x) > half_extents[0] && abs(component_y) > half_extents[1] )
         {
             return sc.get_structure(new_id)->apply_boundary(std::make_pair(new_pos, new_id), sc);
         }
