@@ -2647,10 +2647,16 @@ class CylindricalSurfacePlanarSurfaceInterfaceSingletestShell(CylindricalSurface
         # We want to form this domain only when the particle just arrived onto the plane exiting from a perpendicular cylinder
         # Here we check in advance whether the particle is on the cylinder axis by projecting the difference vector between
         # particle position and cylinder midpoint onto the plane (the projection is zero if both lie on the cyl. axis)
-        distance_from_axis = target_structure.project_point(single.pid_particle_pair[1].position)[1][0]
-        if not feq(distance_from_axis, 0.0, typical=single.pid_particle_pair[1].radius):
+        # TODO Remove this after testing:
+        #distance_from_axis = target_structure.project_point(single.pid_particle_pair[1].position)[1][0]
+        #if not feq(distance_from_axis, 0.0, typical=single.pid_particle_pair[1].radius):
 
-            raise testShellError(('(CylindricalSurfacePlanarSurfaceInterfaceSingle) Particle is not directly below cylinder, distance from axis = %s' % distance_from_axis))
+            #raise testShellError(('(CylindricalSurfacePlanarSurfaceInterfaceSingle) Particle is not directly below cylinder, distance from axis = %s' % distance_from_axis))
+
+        distance_from_plane = target_structure.project_point(single.pid_particle_pair[1].position)[1][0]
+        if not feq(distance_from_plane, 0.0, typical=single.pid_particle_pair[1].radius):
+
+            raise testShellError(('(CylindricalSurfacePlanarSurfaceInterfaceSingle) Particle is not touching the plane, distance from plane = %s' % distance_from_plane))
 
         # If everything seems OK, we can proceed with creating the test shell
         CylindricalSurfaceCapInteractiontestShell.__init__(self, single, target_structure, geometrycontainer, domains)
