@@ -980,7 +980,7 @@ class PlanarSurfaceCylindricalSurfaceInteraction(CylindricalSurfaceInteraction):
         # CylindricalSurfaceInteractiontestShell as a parent class.
         CylindricalSurfaceInteraction.__init__(self, domain_id, shell_id, testShell, reactionrules, interactionrules)
 
-        self.product_structure = self.origin_structure
+        #self.product_structure = self.origin_structure
 
     def draw_escape_time_tuple(self):
         # This draws the time for escape in z-direction; since the particle in this domain
@@ -1248,6 +1248,8 @@ class CylindricalSurfacePlanarSurfaceInteractionSingle(CylindricalSurfaceCapInte
         CylindricalSurfaceCapInteraction.__init__(self, domain_id, shell_id, testShell, reactionrules, interactionrules)
         # For now this just does the same as the cap interaction, but the test shells
         # slightly differ and we like to keep things apart and organized.
+
+        assert self.product_structure==self.origin_structure
 
     def __str__(self):
         return 'CylindricalSurfacePlanarSurfaceInteraction ' + Single.__str__(self)

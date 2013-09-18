@@ -392,10 +392,17 @@ get_pos_sid_pair( CylindricalSurface<Ttraits_>          const& origin_structure,
     typedef typename Ttraits_::position_type            position_type;
     typedef typename Ttraits_::length_type              length_type;
 
-    /*** COMBINATION NOT SUPPORTED ***/
-    throw illegal_propagation_attempt("Structure transition between combination of origin structure and target structure not supported (Cylinder->Plane).");
+    position_type displacement( origin_structure.surface_dissociation_vector(rng, offset, reaction_length) );
+    position_type new_pos( add(old_pos, displacement) );    
+    // TODO assert that new_pos is in target_structure
     
-    return std::make_pair(position_type(), structure_id_type());
+    return std::make_pair(new_pos, target_structure.id());
+    
+    // TODO Cleanup
+//     /*** COMBINATION NOT SUPPORTED ***/
+//     throw illegal_propagation_attempt("Structure transition between combination of origin structure and target structure not supported (Cylinder->Plane).");
+//     
+//     return std::make_pair(position_type(), structure_id_type());
 };
 
 /***************************/

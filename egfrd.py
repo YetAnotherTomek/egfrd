@@ -1118,17 +1118,18 @@ class EGFRDSimulator(ParticleSimulatorBase):
         if __debug__:
             assert isinstance(single, Single)
 
-        # 0. get reactant info
+        # 0. Get reactant info
         reactant                     = single.pid_particle_pair
         reactant_radius              = reactant[1].radius
-        species                      = self.world.get_species(reactant[1].sid)
-        reactant_structure_type_id   = species.structure_type_id
+        reactant_species             = self.world.get_species(reactant[1].sid)
+        reactant_structure_type_id   = reactant_species.structure_type_id
         reactant_structure           = self.world.get_structure(reactant_structure_id)
-        reactant_structure_parent_id = reactant_structure.sid
-        rr = single.reactionrule     # the reaction rule
+        reactant_structure_parent_id = reactant_structure.structure_id
+        # Get reaction rule
+        rr = single.reactionrule
 
-        # The zero_singles are the NonInteractionSingles that are the total result of the recursive
-        # bursting process.
+        # The zero_singles are the NonInteractionSingles that are the total result of the
+        # recursive bursting process.
         zero_singles = []
 
         if len(rr.products) == 0:
@@ -1155,13 +1156,13 @@ class EGFRDSimulator(ParticleSimulatorBase):
             # 1. get product info
             product_species           = self.world.get_species(rr.products[0])
             product_radius            = product_species.radius
-            product_structure_type_id = product_species.structure_type_id
+            product_structure_type_id = product_species.structure_type_id            
 
             # 1.5 get new position and structure_id of particle
             # If the particle falls off a surface (other than CuboidalRegion)
             if product_structure_type_id != reactant_structure_type_id:
-                assert(  product_structure_type_id == self.world.get_def_structure_type_id() \
-                      or product_structure_type_id == reactant_structure_parent_id      )
+                #assert(  product_structure_type_id == self.world.get_def_structure_type_id() \
+                      #or product_structure_type_id == reactant_structure_parent_id           )
 
                 # produce a number of new possible positions for the product particle
                 # TODO make these generators for efficiency
@@ -1187,6 +1188,10 @@ class EGFRDSimulator(ParticleSimulatorBase):
                                         (reactant_structure.shape.unit_z * numpy.dot(unit_vector3D, reactant_structure.shape.unit_z)))
                         vector = reactant_pos + vector_length * unit_vector2D
                         product_pos_list.append(vector)
+
+                    sf_pos, sf_sid = reactant_structure.get_pos_sid_pair(target_structure, reactant_pos, product_radius, 0.0, self.rng)
+                    sf_struct = self.world.get_structure(sf_sid)
+                    log.debug('sf_pos=%s, sf_sid=%s, sf_struct=%s' % (sf_pos, sf_sid, sf_struct))
 
                 elif isinstance(reactant_structure, DiskSurface):
                     # unbinding in direction of disk unit vector
@@ -1222,8 +1227,7 @@ class EGFRDSimulator(ParticleSimulatorBase):
                     product_pos = reactant_pos
                     product_structure_id = reactant_structure_id
 
-                product_pos_list     = [product_pos]           # no change of position is required if structure_type doesn't change
-                product_structure_id = product_structure_id    # The product structure is the structure where the reaction takes place.
+                product_pos_list     = [product_pos]           # no change of position is required if structure_type doesn't change                
 
 
             # 2. make space for the products (kinda brute force, but now we only have to burst once).

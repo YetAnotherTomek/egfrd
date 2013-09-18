@@ -2627,15 +2627,19 @@ class CylindricalSurfaceCapInteractiontestShell(CylindricaltestShell, testIntera
 class CylindricalSurfacePlanarSurfaceInteractionSingletestShell(CylindricalSurfaceCapInteractiontestShell):
 
     def __init__(self, single, target_structure, geometrycontainer, domains):
+
+        assert isinstance(target_structure, PlanarSurface)
+
         CylindricalSurfaceCapInteractiontestShell.__init__(self, single, target_structure, geometrycontainer, domains)
         # This is essentially the same as CylindricalSurfaceCapInteractiontestShell, only that
         # the orientation vector has to be calculated in a different way.
 
-        assert isinstance(target_structure, PlanarSurface)
+        self.product_structure = self.origin_structure
+        # the particle is moved to the interface with the plane, but stays bound to the cylinder
 
     def get_orientation_vector(self):
         # The orientation vector is the (normalized) difference vector pointing from
-        # the particle position towards its projection onto the plane
+        # the particle position towards its projection onto the plane (=target_structure)
         particle_position = self.pid_particle_pair[1].position
         projected_position = self.target_structure.project_point(particle_position)[0]
         return normalize(particle_position - projected_position)
@@ -2667,11 +2671,20 @@ class CylindricalSurfacePlanarSurfaceInterfaceSingletestShell(CylindricalSurface
         self.dz_left  = self.pid_particle_pair[1].radius
         self.dr       = self.pid_particle_pair[1].radius
 
+        self.product_structure = self.origin_structure # should not matter here because we have no IV_INTERACTION event fired
+                                                       # by this domain, but defined for completeness.
+
     def get_searchpoint(self):
         return self.pid_particle_pair[1].position
 
     def get_referencepoint(self):
         return self.pid_particle_pair[1].position
+
+    def get_orientation_vector(self):
+        # Here we have to set the orientation manually because the particle positoin is already in
+        # the target plane, while the particle nominally is still bound to the cylinder.
+        # We just take the orientation vector of the cylinder = origin_structure
+        return self.origin_structure.shape.unit_z
 
     def get_min_dr_dzright_dzleft(self):
         # TODO This will never be called, right? Why do dz_right/dz_left have value larger than particle_radius?
