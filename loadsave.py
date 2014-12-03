@@ -34,6 +34,7 @@ from _gfrd import (
 
 from gfrdbase import *
 from gfrdbase import DomainEvent
+from utils import *
 import model
 import _gfrd
 
@@ -158,7 +159,12 @@ def save_state(simulator, filename):
                   r0 = rr.reactants[0]
                   reactant_ids = ( id_to_int(r0), )
 
-                  if len(rr.products) == 1:
+                  if len(rr.products) == 0:
+
+                      rtype = 'decay'
+                      product_ids  = ()
+
+                  elif len(rr.products) == 1:
 
                       rtype = 'unimolecular'
                       p0 = rr.products[0]
@@ -573,10 +579,22 @@ def load_state(filename):
         product_ids  = eval(cp.get(sectionname, 'product_ids'))
 
         rule = None
-        if rtype == 'unimolecular':
+        if rtype == 'decay':
 
-            assert len(reactant_ids) == 1 and reactant_ids[0] != None and \
-                   len(product_ids)  == 1 and product_ids[0]  != None, \
+            assert len(reactant_ids) == 1 and reactant_ids[0] is not None and \
+                   len(product_ids)  == 0, \
+                     'Saved reaction rule does not have the proper signature: rule = %s' % sectionname
+
+            # Get the reactant species
+            reactant = species_dict[int(reactant_ids[0])]
+
+            # Create the decay rule
+            rule = model.create_decay_reaction_rule(reactant, rate)
+
+        elif rtype == 'unimolecular':
+
+            assert len(reactant_ids) == 1 and reactant_ids[0] is not None and \
+                   len(product_ids)  == 1 and product_ids[0]  is not None, \
                      'Saved reaction rule does not have the proper signature: rule = %s' % sectionname
 
             # Get the involved species
@@ -588,8 +606,8 @@ def load_state(filename):
 
         elif rtype == 'unbinding':
 
-            assert len(reactant_ids) == 1 and reactant_ids[0] != None and \
-                   product_ids[0] != None and product_ids[1]  != None, \
+            assert len(reactant_ids) == 1     and reactant_ids[0] is not None and \
+                   product_ids[0] is not None and product_ids[1]  is not None, \
                      'Saved reaction rule does not have the proper signature: rule = %s' % sectionname
 
             # Get the involved species
@@ -602,8 +620,8 @@ def load_state(filename):
 
         elif rtype == 'binding_particle':
             
-            assert reactant_ids[0] != None and reactant_ids[1] != None and \
-                   len(product_ids) == 1   and product_ids[0]  != None, \
+            assert reactant_ids[0] is not None and reactant_ids[1] is not None and \
+                   len(product_ids) == 1       and product_ids[0]  is not None, \
                      'Saved reaction rule does not have the proper signature: rule = %s' % sectionname
 
             # Get the involved species
@@ -616,8 +634,8 @@ def load_state(filename):
 
         elif rtype == 'binding_surface':
             
-            assert reactant_ids[0] != None and reactant_ids[1] != None and \
-                   len(product_ids) == 1   and product_ids[0]  != None, \
+            assert reactant_ids[0] is not None and reactant_ids[1] is not None and \
+                   len(product_ids) == 1       and product_ids[0]  is not None, \
                      'Saved reaction rule does not have the proper signature: rule = %s' % sectionname
 
             # Get the involved species
@@ -772,7 +790,7 @@ def load_state(filename):
             structure = model.create_planar_surface(structure_type.id, name, corner_pos, unit_x, unit_y, \
                                                     2.0*half_extent[0], 2.0*half_extent[1], parent_structure.id)
             
-            assert all( [structure.shape.unit_z[c]==unit_z[c] for c in range(0,len(unit_z))] )
+            assert all_feq(structure.shape.unit_z, unit_z, tolerance=TOLERANCE)
 
         # Add it to the world
         if structure:
