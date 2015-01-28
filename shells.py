@@ -1922,16 +1922,21 @@ class PlanarSurfaceTransitionPairtestShell(SphericaltestShell, testPlanarSurface
 
 ##########################
 class CylindricaltestShellScalingFunctions(CylinderScalingFunctions):
+    # This class implements methods that are used to calculate the new r/z_right/z_left after
+    # one of the parameters r/z_right/z_left has changed. 
+    # Note that in general the scaling centers (r0, z0) and scaling directions drdz 
+    # are defined differently for every testShell. Therefore, every cylindrical test shell class
+    # contains an instance of CylindricaltestShellScalingFunctions.
+    # Since the methods implemented here have to be called by the Pythonified C++ class
+    # CylinderScalingHelperTools, the shell-specific instance of this class is passed to
+    # the Pythonified C++ class upon construction.
 
     def __init__(self, testShell):
 
         CylinderScalingFunctions.__init__(self, self)   # TODO why does this have to take two self arguments to work?
 
         self.testShell = testShell
-
-    # These methods are used to calculate the new r/z_right/z_left after one of the parameters 
-    # r/z_right/z_left has changed. The scaling centers (r0, z0) and scaling directions drdz
-    # are defined differently for every testShell.
+    
     def r_right(self, z_right):
         return self.testShell.drdz_right * (z_right - self.testShell.z0_right) + self.testShell.r0_right
     def z_right(self, r_right):
