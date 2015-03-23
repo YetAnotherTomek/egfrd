@@ -289,10 +289,6 @@ class testStandardPair(testPair):
     # override some of them. These test pair classes are defined further below.
     def __init__(self, single1, single2):
 
-        # Simple pairs are pairs of particles that are on the same structure
-        #assert single1.structure == single2.structure
-		### TODO: Check whether this was copied correctly when merging the new develop branch!!!
-
         testPair.__init__(self, single1, single2)
         self.structure = single1.structure # equal to self.structure1 and self.structure2,
                                            # needed by some class methods downstream
