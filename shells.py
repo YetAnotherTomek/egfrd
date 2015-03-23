@@ -290,7 +290,9 @@ class testStandardPair(testPair):
     def __init__(self, single1, single2):
 
         # Simple pairs are pairs of particles that are on the same structure
-        assert single1.structure == single2.structure
+        #assert single1.structure == single2.structure
+		### TODO: Check whether this was copied correctly when merging the new develop branch!!!
+
         testPair.__init__(self, single1, single2)
         self.structure = single1.structure # equal to self.structure1 and self.structure2,
                                            # needed by some class methods downstream
@@ -887,6 +889,8 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     # -> the shell MUST be a Cylinder.
     assert(type(shape) is Cylinder)
 
+	# TESTING: Choose here whether to use the old ("Python") or new ("C++") version
+	# of the cylinder scaling tools:
     calculation_mode = "Python"
     #calculation_mode = "C++"
 
@@ -921,7 +925,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         z1_function = testShell.z_right
         z2_function = testShell.z_left
         z1 = z_right
-        z2 = z_left        
+        z2 = z_left
 
         ## TESTING pythonified CylinderScalingFunctions
         #test_output_fromPython  = testShell.z_right(shell_radius)
@@ -985,10 +989,10 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
     elif calculation_mode == "Python":
         # HERE THE OLD (PYTHON-BASED) CALCULATIONS START
         # TODO REMOVE THIS AFTER TESTING
-
+		
 		# Check how the cylinders are oriented with respect to each other
-    	relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))
-
+		relative_orientation = abs(numpy.dot(orientation_vector, shape.unit_z))
+		
 		if feq(relative_orientation, 1.0):
 		#### If the cylinders are parallel ####
 
@@ -2038,7 +2042,7 @@ class CylindricaltestShell(testShell):
     # These methods are used to calculate the new r/z_right/z_left after one of the parameters 
     # r/z_right/z_left has changed. The scaling centers (r0, z0) and scaling directions drdz
     # are defined differently for every testShell.
-    # TESTING These are simple wrappers now and defined by a separate class that can be passed 
+    # TESTING: These are simple wrappers now and defined by a separate class that can be passed 
     # to subclasses of this testShell class.
     # This way we make the methods accessible to C++ functions outside of the testShell class
     def r_right(self, z_right):
@@ -2128,7 +2132,7 @@ class PlanarSurfaceSingletestShell(CylindricaltestShell, testNonInteractionSingl
         self.dzdr_left  = 0.0
         self.drdz_left  = numpy.inf
         self.r0_left    = 0.0
-        self.z0_left    = self.pid_particle_pair[1].radius        
+        self.z0_left    = self.pid_particle_pair[1].radius
 
         self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
