@@ -1592,7 +1592,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
 
     z2_new = min(z2, z2_function(r_new))
 
-    log.info('z1_old = %s, z2_old = %s, z1_new = %s, z2_new = %s' % (z1, z2, z1_new, z2_new))
+    log.info('z1_old = %s, z2_old = %s, z1_new = %s, z2_new = %s' % (z1, z2, z1_new, z2_new)) ### TESTING
 
     ## Print a comparison between the old (Python-based) and new (C++-based) results
     #if abs( (r_new-r_new_c)/r_new_c ) > 0.01 or abs( (z1_new-z1_new_c)/z1_new_c ) > 0.01 or abs( (z2_new-z2_new_c)/z2_new_c ) > 0.01 \
@@ -3132,14 +3132,13 @@ class CylindricalSurfaceSinktestShell(CylindricaltestShell, testInteractionSingl
         return r, z_right/SAFETY, z_left/SAFETY
 
 #####
-class MixedPair2D3DtestShellScalingFunctions(CylinderScalingFunctions):
+class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunctions):
 
     def __init__(self, testShell):
 
-        CylinderScalingFunctions.__init__(self, self)   # TODO why do we have to pass self two times here?
+        CylindricaltestShellScalingFunctions.__init__(self, testShell)
 
         self.testShell = testShell
-
 
     # self.z_left() and self.r_left() are inherited from the standard class (CylindricaltestShellScalingFunctions)
 
