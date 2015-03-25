@@ -3138,9 +3138,8 @@ class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunction
 
         CylindricaltestShellScalingFunctions.__init__(self, testShell)
 
-        self.testShell = testShell
-
-    # self.z_left() and self.r_left() are inherited from the standard class (CylindricaltestShellScalingFunctions)
+    # self.testshell, self.z_left() and self.r_left() 
+    # are inherited from the standard class (CylindricaltestShellScalingFunctions)
 
     def z_right(self, r_right):
         # This calculates the height z_right of the newly constructed domain
