@@ -1592,7 +1592,7 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
 
     z2_new = min(z2, z2_function(r_new))
 
-    log.info('z1_old = %s, z2_old = %s, z1_new = %s, z2_new = %s' % (z1, z2, z1_new, z2_new)) ### TESTING
+    #log.info('z1_old = %s, z2_old = %s, z1_new = %s, z2_new = %s' % (z1, z2, z1_new, z2_new)) ### TESTING
 
     ## Print a comparison between the old (Python-based) and new (C++-based) results
     #if abs( (r_new-r_new_c)/r_new_c ) > 0.01 or abs( (z1_new-z1_new_c)/z1_new_c ) > 0.01 or abs( (z2_new-z2_new_c)/z2_new_c ) > 0.01 \
@@ -1959,23 +1959,23 @@ class CylindricaltestShell(testShell):
         # This determines the maximum dr, dz_right, dz_left of the cylindrical testShell or
         # throws an exception if the domain could not be made due to geometrical constraints.
         
-	log.info('Calling determine_possible_shell') ### TESTING
+	#log.info('Calling determine_possible_shell') ### TESTING
         neighbor_domains, neighbor_surfaces = self.get_neighbors(base_structure_id, ignore, ignores)
 
         min_dr, min_dz_right, min_dz_left = self.get_min_dr_dzright_dzleft()
         max_dr, max_dz_right, max_dz_left = self.get_max_dr_dzright_dzleft()
 
         # initialize the parameters to start the scaling of the cylinder
-	log.info('Applying safety') ### TESTING
+	#log.info('Applying safety') ### TESTING
         min_dr, min_dz_right, min_dz_left = self.apply_safety(min_dr, min_dz_right, min_dz_left)
         dr, dz_right, dz_left             = max_dr, max_dz_right, max_dz_left
  
         # first check the maximum dr, dz_right, dz_left against the surfaces
         # NOTE: we assume that all relevant surfaces are cylindrical and parallel to the testCylinder
         # or planar surfaces and parallel to the testCylinder axis
-	log.info('Now checking collisions') ### TESTING
-	log.info('  min_pars = (%s, %s, %s)' % (min_dr, min_dz_right, min_dz_left)) 
-	log.info('  max_pars = (%s, %s, %s)' % (max_dr, max_dz_right, max_dz_left)) 
+	#log.info('Now checking collisions') ### TESTING
+	#log.info('  min_pars = (%s, %s, %s)' % (min_dr, min_dz_right, min_dz_left)) 
+	#log.info('  max_pars = (%s, %s, %s)' % (max_dr, max_dz_right, max_dz_left)) 
         for surface, distance in neighbor_surfaces:
             # TODO
             if isinstance(surface, SphericalSurface):
@@ -3172,7 +3172,7 @@ class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunction
             z_right = 0.0
 
 	### TESTING
-	log.info('Called new z_right(): z_right = %s' % z_right)
+	#log.info('Called new z_right(): z_right = %s' % z_right)
 
         return z_right
 
@@ -3222,7 +3222,7 @@ class MixedPair2D3DtestShellScalingFunctions(CylindricaltestShellScalingFunction
             r_right = 0.0
 
 	### TESTING
-	log.info('Called new r_right(): r_right = %s' % r_right)
+	#log.info('Called new r_right(): r_right = %s' % r_right)
 
         return r_right        
 
@@ -3310,9 +3310,8 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
         ### calculate the minimal height z_right1 of the shell including burst radius
         dz_right1 = 1.5 * self.iv_z_minimum
         # with the accompanying radius r1
-	log.info('Calling r_right() from get_min_dr_dzright_dzleft()')
+	#log.info('Calling r_right() from get_min_dr_dzright_dzleft()') ### TESTING
         dr_1 = self.r_right(dz_right1)
-	log.info('Done.')
 
 #        ### calculate the minimal radius r2 of the shell including the burst radius
 #        # First calculate the minimal size of the iv shell (r0 is at outer boundary)
@@ -3337,7 +3336,8 @@ class MixedPair2D3DtestShell(CylindricaltestShell, testMixedPair2D3D):
 
         dz_left  = self.particle2D.radius
 
-	log.info('Returning dr = %s, dz_right = %s, dz_left = %s' % (dr, dz_right, dz_left))
+	### TESTING
+	#log.info('Returning dr = %s, dz_right = %s, dz_left = %s' % (dr, dz_right, dz_left))
 
         return dr, dz_right, dz_left
         
