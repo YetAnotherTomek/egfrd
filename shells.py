@@ -2772,6 +2772,8 @@ class PlanarSurfaceDiskSurfaceInteractiontestShell(CylindricalSurfaceInteraction
         self.drdz_left  = numpy.inf
         self.r0_left    = 0.0
         self.z0_left    = self.z0_right
+        
+        self.ScalingFunctions = CylindricaltestShellScalingFunctions(self)
 
         # Now we can also define the scaling angle
         self.right_scalingangle = self.get_right_scalingangle()
