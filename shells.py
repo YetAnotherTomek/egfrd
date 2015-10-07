@@ -2,6 +2,8 @@
 
 import math
 
+from decimal import *
+
 from _gfrd import (
     Sphere,
     SphericalShell,
@@ -1630,6 +1632,19 @@ def get_dr_dzright_dzleft_to_CylindricalShape(shape, testShell, r, z_right, z_le
         z_right = z2_new
         z_left  = z1_new
 
+    # TESTING: truncate floating point precision to 3 using decimal package
+    # This is to compare whether the C++ and Python numerics indeed give similar numbers
+    getcontext().prec = 4
+    d1    = Decimal(1)
+    r_dec = d1 * Decimal(str(r))
+    z_right_dec = d1 * Decimal(str(z_right))
+    z_left_dec  = d1 * Decimal(str(z_left))
+    
+    r = float(r_dec)
+    z_right = float(z_right_dec)
+    z_left  = float(z_left_dec)
+    # end TESTING
+        
     if( r < 0 or z_left < 0 or z_right < 0 ):
         raise testShellError('get_dr_dzright_dzleft_to_CylindricalShape: Negative length in shell scaling: r=%s, z_left=%s, z_right=%s' % (r, z_left, z_right) )
 
