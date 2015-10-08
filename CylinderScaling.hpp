@@ -41,8 +41,8 @@
 template <typename Ttraits_>
 class CylinderScalingFunctions
 {
- public:
-   
+  public:
+  
     typedef typename Ttraits_::length_type      length_type;
 
     // Here we define virtual default functions which can be overridden by both C++ and Python
@@ -127,7 +127,7 @@ struct edge_hits_edge_eq_params
 template <typename Ttraits_>
 class CylinderScalingHelperTools
 {
- 
+
   typedef typename Ttraits_::length_type      length_type;  
   typedef typename Ttraits_::position_type    position_type;  
   typedef int                                 direction_type;
@@ -142,7 +142,7 @@ class CylinderScalingHelperTools
           LOWER_RIGHT,  // otherShell overlaps with intersection of testShell in the two quadrants closest to projected barrel of otherShell
           UPPER_RIGHT,  // otherShell overlaps with intersection of testShell only in the quadrant closest to midpoint of otherShell          
           UNDETERMINED  // the default bogus value
-       };
+  };
   
   // define scaling helper function reference type to later define an array
   // of scaling functions with direction_type index
@@ -507,7 +507,7 @@ class CylinderScalingHelperTools
                     assert(scale_center_to_shell_crit_angle_xy < scale_angle 
                            && scale_angle < scale_center_to_shell_low_angle_xy 
                            && scale_angle > 0.0);
-                           
+                          
                     collision_situation = EDGE_HITS_EDGE;
                     // r1_min and h1_min are later used in the EDGE_HITS_EDGE rootfinder-based collision routine 
                     // TODO can we not outsource this from here?
@@ -602,7 +602,7 @@ class CylinderScalingHelperTools
         return (scale_center_to_shell_z - x/tan_scale_angle)*(scale_center_to_shell_z - x/tan_scale_angle) - otherShell_radius_sq
                 + (scale_center_to_shell_y - std::sqrt( sqrt_arg ))*(scale_center_to_shell_y - std::sqrt( sqrt_arg ));
     };
-               
+              
     // (c) Now the function that handles the scaling for each collision situation specifically
     inline position_type get_dr_dzright_dzleft_for_specific_collision(collision_type collision_situation)
     {
@@ -729,7 +729,7 @@ class CylinderScalingHelperTools
                   
                   if(scale_angle <= M_PI/4.0)
                   {                    
-                   
+                  
                     //log_.info("C++: Entering rootfinding, scale_angle <= M_PI/4.0 (finding h1)");  // TESTING
                                                                             
                     // Pack function and parameters into the format required by GSL
@@ -1032,9 +1032,9 @@ class CylinderScalingHelperTools
               if( scale_center_shell_dist > std::sqrt(scale_center_to_shell_y*scale_center_to_shell_y 
                                                       + scale_center_to_shell_z*scale_center_to_shell_z) * (1.0+TOLERANCE) )
               {
-                         log_.warn("Orthogonal cylinder scaling, EDGE_HITS_BARREL case: scale-center-to-shell distance is out of foreseen bounds:");
-                         log_.warn("   distance=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s",
-                                          scale_center_shell_dist, scale_center_to_shell_y, scale_center_to_shell_z);
+                  log_.warn("Orthogonal cylinder scaling, EDGE_HITS_BARREL case: scale-center-to-shell distance is out of foreseen bounds:");
+                  log_.warn("   distance=%s, scale_center_to_shell_y=%s, scale_center_to_shell_z=%s",
+                                    scale_center_shell_dist, scale_center_to_shell_y, scale_center_to_shell_z);
               }
 
               if(scale_angle <= M_PI/4.0)
@@ -1158,7 +1158,7 @@ class CylinderScalingHelperTools
     position_type       testShell_dimensions;   // first entry radius r, second z1, third z2
     position_type       otherShell_position_t;
     position_type       otherShell_orientation_vector;
-    position_type       otherShell_dimensions;  // 1st entry radius r, 2nd half_length, 3r http://www.imaginefilmfestival.nl/d unused
+    position_type       otherShell_dimensions;  // 1st entry radius r, 2nd half_length, 3rd unused
     position_type       scale_center_info;      // 1st entry r-coord. of the scale center, 2nd z-coord.
     position_type       scale_angle_info;       // 1st entry scale_angle, 2nd entry tan(scale_angle), 3rd unused;
                                                 // tan(scale_angle) is calculated in Python already at shell 
@@ -1176,7 +1176,7 @@ class CylinderScalingHelperTools
     direction_type      direction;
     int                 di; // to address the methods in the scaling function pointer arrays
                             // has to start from zero, so we have to map direction=-1 to di=0
-                                         
+                                        
     // Scale center
     length_type         scale_center_r;
     length_type         scale_center_z;                                               
@@ -1219,53 +1219,53 @@ class CylinderScalingHelperTools
                                 direction_type  direction_,
                                 position_type   scale_center_info_, 
                                 position_type   scale_angle_info_                 ):
-     CSF(CSF_),
-     testShell_reference_point(testShell_reference_point_),
-     testShell_orientation_vector(testShell_orientation_vector_),
-     testShell_dimensions(testShell_dimensions_),
-     otherShell_position_t(otherShell_position_t_),
-     otherShell_orientation_vector(otherShell_orientation_vector_),
-     otherShell_dimensions(otherShell_dimensions_),
-     direction(direction_),
-     scale_center_info(scale_center_info_), 
-     scale_angle_info(scale_angle_info_)
+    CSF(CSF_),
+    testShell_reference_point(testShell_reference_point_),
+    testShell_orientation_vector(testShell_orientation_vector_),
+    testShell_dimensions(testShell_dimensions_),
+    otherShell_position_t(otherShell_position_t_),
+    otherShell_orientation_vector(otherShell_orientation_vector_),
+    otherShell_dimensions(otherShell_dimensions_),
+    direction(direction_),
+    scale_center_info(scale_center_info_), 
+    scale_angle_info(scale_angle_info_)
     {
-         // Assign the scaling functions to the pointer arrays
-         // for the two different directions direction = -1 (di = 0)
-         r1_function[0] = &CylinderScalingHelperTools<Ttraits_>::r_left;
-         z1_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_left;
-         z2_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_right;
-         // direction = +1 (di = 1)
-         r1_function[1] = &CylinderScalingHelperTools<Ttraits_>::r_right;
-         z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
-         z2_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_left;
-         
-         // Assign pointers to the functions that are used to solve the implicit
-         // equation in the edge-hits-edge intersection case via the GSL rootfinder
-         edge_hits_edge_h1_eq_pt = ( double (*)(double, void*) )(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq);
-         edge_hits_edge_r1_eq_pt = ( double (*)(double, void*) )(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq);
-         
-         // Set direction index for addressing the above arrays
-         di = (direction == 1) ? 1 : 0;
-         
-         // Unpack scaling_info         
-         scale_center_r  = scale_center_info[0];
-         scale_center_z  = scale_center_info[1];         
-         scale_angle     = scale_angle_info[0];
-         tan_scale_angle = scale_angle_info[1];
-         
-         // Unpack shell dimensions
-         // for testShell
-         r  = testShell_dimensions[0];
-         z1 = testShell_dimensions[1];
-         z2 = testShell_dimensions[2];
-         // for otherShell
-         otherShell_radius = otherShell_dimensions[0];
-         otherShell_hl     = otherShell_dimensions[1]; // half-length
-         
-         ref_to_shell_vec = subtract(otherShell_position_t, testShell_reference_point);
-         ref_to_shell_z   = dot_product(ref_to_shell_vec, testShell_orientation_vector);
-         
+        // Assign the scaling functions to the pointer arrays
+        // for the two different directions direction = -1 (di = 0)
+        r1_function[0] = &CylinderScalingHelperTools<Ttraits_>::r_left;
+        z1_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_left;
+        z2_function[0] = &CylinderScalingHelperTools<Ttraits_>::z_right;
+        // direction = +1 (di = 1)
+        r1_function[1] = &CylinderScalingHelperTools<Ttraits_>::r_right;
+        z1_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_right;
+        z2_function[1] = &CylinderScalingHelperTools<Ttraits_>::z_left;
+        
+        // Assign pointers to the functions that are used to solve the implicit
+        // equation in the edge-hits-edge intersection case via the GSL rootfinder
+        edge_hits_edge_h1_eq_pt = ( double (*)(double, void*) )(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq);
+        edge_hits_edge_r1_eq_pt = ( double (*)(double, void*) )(&CylinderScalingHelperTools<Ttraits_>::edge_hits_edge_h1_eq);
+        
+        // Set direction index for addressing the above arrays
+        di = (direction == 1) ? 1 : 0;
+        
+        // Unpack scaling_info         
+        scale_center_r  = scale_center_info[0];
+        scale_center_z  = scale_center_info[1];         
+        scale_angle     = scale_angle_info[0];
+        tan_scale_angle = scale_angle_info[1];
+        
+        // Unpack shell dimensions
+        // for testShell
+        r  = testShell_dimensions[0];
+        z1 = testShell_dimensions[1];
+        z2 = testShell_dimensions[2];
+        // for otherShell
+        otherShell_radius = otherShell_dimensions[0];
+        otherShell_hl     = otherShell_dimensions[1]; // half-length
+        
+        ref_to_shell_vec = subtract(otherShell_position_t, testShell_reference_point);
+        ref_to_shell_z   = dot_product(ref_to_shell_vec, testShell_orientation_vector);
+        
     };
     
     // DESTRUCTOR
