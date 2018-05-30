@@ -25,6 +25,14 @@ from multi import Multi
 from single import *
 from pair import *
 
+try:
+  import povexport
+  POV_MODULE = True
+  
+except ImportError:  
+  pass
+
+
 __all__ = [
     'TIRViE',
     'TheImperialRoyalVisualizerForEGFRD',    
@@ -102,10 +110,13 @@ class TheImperialRoyalVisualizerForEGFRD:
     self.N_RANDOM_COLORS = 1000
     
     # A flag regulating output capturing
-    self.CAPTURE = capture
+    self.CAPTURE = capture    
     # The directory name where the captured frames will be stored
     self.capture_dir = capture_dir
     self.output_image_suffix = '.png' # should be in format .xxx (.png, .jpg, etc.)
+    
+    # A flag for exporting the current scene to POV-Ray format (needs povexport module, see above)
+    self.POV_EXPORT_NOW = False
     
     # A flag to pause/resume the execution of the simulation
     self.PAUSED = False
@@ -182,6 +193,14 @@ class TheImperialRoyalVisualizerForEGFRD:
     if self.CAPTURE:
     
       self.capture()
+      
+    if self.POV_EXPORT_NOW:
+      
+      if POV_MODULE:
+        self.pov_export()
+        self.POV_EXPORT_NOW = False
+      else:
+        print "Cannot export to POV-Ray format, module povexport.py is not installed..."
       
   #################################################################
   #################################################################
@@ -349,12 +368,26 @@ class TheImperialRoyalVisualizerForEGFRD:
     # Check how many output frames there are already
     frame_no = int( os.popen('ls ' + self.capture_dir + ' | wc -l').read() )
     # Increase the frame_no by one and give it the right string format
-    formated_frame_no = "%06u" % (frame_no + 1)    
+    formated_frame_no = "%06u" % (frame_no + 1)
     # Give the new frame the corresponding name
     savename = self.capture_dir + '/frame_' + formated_frame_no + self.output_image_suffix
     # Grab the image (using ImageMagicx) and save it
     print 'Writing ', savename
-    os.popen('import -window "' + self.window_title + '" ' + savename)        
+    os.popen('import -window "' + self.window_title + '" ' + savename)
+
+    
+  def pov_export(self):
+    
+    # Check how many output frames there are already
+    frame_no = int( os.popen('ls ' + self.capture_dir + '/pov_frame_* | wc -l').read() )
+    # Increase the frame_no by one and give it the right string format
+    formated_frame_no = "%06u" % (frame_no + 1)
+    # Give the new frame the corresponding name
+    savename = self.capture_dir + '/pov_frame_' + formated_frame_no + '.pov'
+    # Export the scene to POV-Ray format, using the povexport module
+    print("Exporting to POV-Ray file...")
+    print 'Writing ', savename
+    povexport.export(display=self.scene, filename=savename)
     
     
   ####################################      
@@ -458,6 +491,12 @@ class TheImperialRoyalVisualizerForEGFRD:
     elif k == 'c' or k == 'C':
       
       self.CAPTURE = not(self.CAPTURE)
+      
+    # Export the scene to PovRay format in the next loop
+    # This is a "hidden" function, and requires that module povexport is imported above
+    elif k == 'x' or k == 'X':
+      
+      self.POV_EXPORT_NOW = True
 
 
   def pause(self):
